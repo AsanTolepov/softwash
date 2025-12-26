@@ -4,6 +4,8 @@ import { Moon, Sun, Globe2, DollarSign, Target } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
+import { useI18n } from '@/lib/i18n';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,17 +27,17 @@ import {
 export default function Settings() {
   const { settings, updateSettings } = useApp();
   const { toast } = useToast();
+  const { t } = useI18n();
 
   const [form, setForm] = useState(settings);
 
-  // Settings o'zgarganda formani yangilab turamiz
+  // Contextdagi settings o‘zgarsa, formani yangilab turamiz
   useEffect(() => {
     setForm(settings);
   }, [settings]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Barcha sozlamalarni yangilaymiz (tema, til, valyuta, maqsad)
     updateSettings(form);
 
     toast({
@@ -46,10 +48,13 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      {/* Sarlavha */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Sozlamalar</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          {t('settingsPage.title')}
+        </h1>
         <p className="text-muted-foreground">
-          Tizim tilini, valyutani va tashqi ko‘rinishni sozlang
+          {t('settingsPage.subtitle')}
         </p>
       </div>
 
@@ -57,9 +62,9 @@ export default function Settings() {
         {/* UMUMIY */}
         <Card>
           <CardHeader>
-            <CardTitle>Umumiy</CardTitle>
+            <CardTitle>{t('settingsPage.generalTitle')}</CardTitle>
             <CardDescription>
-              Tizimning asosiy tili va valyutasini tanlang
+              {t('settingsPage.generalDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -67,7 +72,7 @@ export default function Settings() {
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Globe2 className="h-4 w-4 text-primary" />
-                Til
+                {t('settingsPage.languageLabel')}
               </Label>
               <Select
                 value={form.language}
@@ -76,12 +81,12 @@ export default function Settings() {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Tilni tanlang" />
+                  <SelectValue placeholder={t('settingsPage.languageLabel')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="uz">O‘zbekcha</SelectItem>
-                  <SelectItem value="ru">Ruscha</SelectItem>
-                  <SelectItem value="en">Inglizcha</SelectItem>
+                  <SelectItem value="ru">Русский</SelectItem>
+                  <SelectItem value="en">English</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -90,7 +95,7 @@ export default function Settings() {
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4 text-primary" />
-                Valyuta
+                {t('settingsPage.currencyLabel')}
               </Label>
               <Select
                 value={form.currency}
@@ -99,12 +104,12 @@ export default function Settings() {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Valyutani tanlang" />
+                  <SelectValue placeholder={t('settingsPage.currencyLabel')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="UZS">UZS (so‘m)</SelectItem>
-                  <SelectItem value="USD">USD (AQSH dollari)</SelectItem>
-                  <SelectItem value="EUR">EUR (Yevro)</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="EUR">EUR</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -114,19 +119,21 @@ export default function Settings() {
         {/* KO‘RINISH VA MAQSADLAR */}
         <Card>
           <CardHeader>
-            <CardTitle>Ko‘rinish va maqsadlar</CardTitle>
+            <CardTitle>{t('settingsPage.appearanceTitle')}</CardTitle>
             <CardDescription>
-              Tungi/kunlik rejim va kundalik daromad maqsadini belgilang
+              {t('settingsPage.appearanceDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {/* Tema (mavzu) */}
+            {/* Tema */}
             <div className="space-y-3">
               <Label className="flex items-center gap-2">
                 <Sun className="h-4 w-4 text-primary" />
-                Mavzu (tema)
+                {t('settingsPage.themeLabel')}
               </Label>
+
               <div className="space-y-2">
+                {/* Light */}
                 <button
                   type="button"
                   onClick={() =>
@@ -140,7 +147,7 @@ export default function Settings() {
                 >
                   <span className="flex items-center gap-2">
                     <Sun className="h-4 w-4" />
-                    Yorug‘ (light)
+                    {t('settingsPage.lightTheme')}
                   </span>
                   {form.theme === 'light' && (
                     <span className="text-xs text-primary font-medium">
@@ -149,6 +156,7 @@ export default function Settings() {
                   )}
                 </button>
 
+                {/* Dark */}
                 <button
                   type="button"
                   onClick={() =>
@@ -162,7 +170,7 @@ export default function Settings() {
                 >
                   <span className="flex items-center gap-2">
                     <Moon className="h-4 w-4" />
-                    Tungi (dark)
+                    {t('settingsPage.darkTheme')}
                   </span>
                   {form.theme === 'dark' && (
                     <span className="text-xs text-primary font-medium">
@@ -177,7 +185,7 @@ export default function Settings() {
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Target className="h-4 w-4 text-primary" />
-                Kundalik daromad maqsadi (so‘m)
+                {t('settingsPage.targetLabel')}
               </Label>
               <Input
                 type="number"
@@ -198,7 +206,7 @@ export default function Settings() {
         </Card>
 
         <div className="flex justify-end">
-          <Button type="submit">O‘zgarishlarni saqlash</Button>
+          <Button type="submit">{t('settingsPage.saveButton')}</Button>
         </div>
       </form>
     </div>

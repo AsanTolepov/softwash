@@ -48,7 +48,7 @@ export default function Confirmation() {
         <div className="flex items-center justify-center gap-2 text-muted-foreground">
           <Phone className="h-4 w-4" />
           <span className="text-sm">
-            Savollaringiz bormi? Bizga +998 (71) 123-45-67 raqamiga qo‘ng‘iroq qiling.
+            Savollaringiz bormi? Bizga +998 (88) 562-21-06 yoki +998 (93) 489-11-17 raqamiga qo‘ng‘iroq qiling.
           </span>
         </div>
 

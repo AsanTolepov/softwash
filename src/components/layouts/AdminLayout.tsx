@@ -16,6 +16,7 @@ import {
 
 import { cn } from '@/lib/utils';
 import { useApp } from '@/contexts/AppContext';
+import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import {
   Avatar,
@@ -30,19 +31,53 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// ADMIN menyusi
-const adminMenuItems = [
-  { icon: LayoutDashboard, label: 'Boshqaruv paneli', path: '/admin' },
-  { icon: ShoppingBag, label: 'Buyurtmalar', path: '/admin/orders' },
-  { icon: Users, label: 'Xodimlar', path: '/admin/employees' },
-  { icon: Receipt, label: 'Xarajatlar', path: '/admin/expenses' },
-  { icon: BarChart3, label: 'Hisobotlar', path: '/admin/reports' },
-  { icon: Settings, label: 'Sozlamalar', path: '/admin/settings' },
+type MenuItem = {
+  icon: React.ComponentType<{ className?: string }>;
+  labelKey: string;
+  path: string;
+};
+
+// ADMIN menyusi – labelKey lar i18n uchun
+const adminMenuItems: MenuItem[] = [
+  {
+    icon: LayoutDashboard,
+    labelKey: 'sidebar.dashboard',
+    path: '/admin',
+  },
+  {
+    icon: ShoppingBag,
+    labelKey: 'sidebar.orders',
+    path: '/admin/orders',
+  },
+  {
+    icon: Users,
+    labelKey: 'sidebar.employees',
+    path: '/admin/employees',
+  },
+  {
+    icon: Receipt,
+    labelKey: 'sidebar.expenses',
+    path: '/admin/expenses',
+  },
+  {
+    icon: BarChart3,
+    labelKey: 'sidebar.reports',
+    path: '/admin/reports',
+  },
+  {
+    icon: Settings,
+    labelKey: 'sidebar.settings',
+    path: '/admin/settings',
+  },
 ];
 
-// SUPERADMIN menyusi
-const superadminMenuItems = [
-  { icon: Building2, label: 'Kompaniyalar', path: '/superadmin' },
+// SUPERADMIN menyusi – faqat Kompaniyalar
+const superadminMenuItems: MenuItem[] = [
+  {
+    icon: Building2,
+    labelKey: 'sidebar.companies',
+    path: '/superadmin',
+  },
 ];
 
 export function AdminLayout() {
@@ -50,8 +85,9 @@ export function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, companies } = useApp();
+  const { t } = useI18n();
 
-  // Menyu tanlash
+  // Qaysi menyu: admin yoki superadmin
   const menuItems =
     user?.type === 'superadmin' ? superadminMenuItems : adminMenuItems;
 
@@ -130,7 +166,9 @@ export function AdminLayout() {
               >
                 <item.icon className="h-5 w-5 flex-shrink-0" />
                 {!collapsed && (
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-medium">
+                    {t(item.labelKey)}
+                  </span>
                 )}
               </button>
             );
@@ -150,13 +188,13 @@ export function AdminLayout() {
           <div>
             <h2 className="font-semibold text-foreground">
               {user?.type === 'superadmin'
-                ? 'Superadmin paneli'
+                ? t('header.superadminTitle')
                 : user?.companyName}
             </h2>
             <p className="text-sm text-muted-foreground">
               {user?.type === 'superadmin'
-                ? 'Barcha kirxonalarni boshqarish'
-                : 'Kompaniya boshqaruv paneli'}
+                ? t('header.superadminSubtitle')
+                : t('header.adminSubtitle')}
             </p>
           </div>
 
@@ -177,12 +215,14 @@ export function AdminLayout() {
                   </AvatarFallback>
                 </Avatar>
                 <span className="font-medium hidden sm:inline">
-                  {user?.type === 'superadmin' ? 'Superadmin' : 'Admin'}
+                  {user?.type === 'superadmin'
+                    ? t('header.superadminName')
+                    : t('header.adminName')}
                 </span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              {/* Profil faqat ADMIN uchun */}
+              {/* PROFIL faqat ADMIN uchun */}
               {user?.type === 'admin' && (
                 <>
                   <DropdownMenuItem

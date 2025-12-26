@@ -1,4 +1,3 @@
-// src/contexts/AppContext.tsx
 import React, {
   createContext,
   useContext,
@@ -48,11 +47,14 @@ interface AppContextType {
   employees: Employee[];
   addEmployee: (employee: Omit<Employee, 'id' | 'attendance'>) => void;
   updateEmployee: (id: string, updates: Partial<Employee>) => void;
+  deleteEmployee: (id: string) => Promise<void>;
   getEmployeesByCompany: (companyId: string) => Employee[];
 
   // Expenses
   expenses: Expense[];
   addExpense: (expense: Omit<Expense, 'id'>) => void;
+  updateExpense: (id: string, updates: Partial<Expense>) => void;
+  deleteExpense: (id: string) => Promise<void>;
   getExpensesByCompany: (companyId: string) => Expense[];
 
   // Settings
@@ -73,10 +75,7 @@ const defaultSettings: Settings = {
   dailyRevenueTarget: 1_000_000,
 };
 
-/**
- * Firestore'ga yozishdan oldin obyekt ichidan barcha undefined maydonlarni olib tashlaydi
- * (nested obyektlar va massivlar bilan ham ishlaydi)
- */
+// Firestore uchun undefinedlarni olib tashlaymiz
 function cleanUndefined<T>(value: T): T {
   if (Array.isArray(value)) {
     // @ts-ignore
@@ -102,7 +101,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [settings, setSettings] = useState<Settings>(defaultSettings);
 
-  // --- Dastlabki ma'lumotlarni Firestore'dan yuklash ---
+  // Dastlabki ma'lumotlarni Firestore'dan yuklash
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -186,7 +185,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     loadData();
   }, []);
 
-  // --- Tema (dark/light) ni butun saytga qo'llash ---
+  // Tema (dark/light) ni butun saytga qo'llash
   useEffect(() => {
     const root = document.documentElement;
 
@@ -197,17 +196,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [settings.theme]);
 
-  // --- LOGIN / LOGOUT ---
+  // LOGIN / LOGOUT
 
   const login = useCallback(
     (username: string, password: string): boolean => {
-      // Superadmin
       if (username === 'superadmin' && password === 'superadmin') {
         setUser({ type: 'superadmin', username: 'superadmin' });
         return true;
       }
 
-      // Kompaniya adminlari – asosiy yoki zaxira login/parol
       const company = companies.find((c) => {
         if (!c.isEnabled) return false;
 
@@ -242,7 +239,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
-  // --- KOMPANIYALAR ---
+  // KOMPANIYALAR
 
   const addCompany = useCallback((company: Omit<Company, 'id'>) => {
     const newCompany: Company = {
@@ -272,19 +269,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  // Kompaniyani o'chirish (shu kompaniyaga tegishli order/employee/expense ham)
   const deleteCompany = useCallback(async (id: string) => {
-    // Local state dan olib tashlash
+    // Lokal state
     setCompanies((prev) => prev.filter((c) => c.id !== id));
     setOrders((prev) => prev.filter((o) => o.companyId !== id));
     setEmployees((prev) => prev.filter((e) => e.companyId !== id));
     setExpenses((prev) => prev.filter((x) => x.companyId !== id));
 
     try {
-      // Kompaniyaning o'zini o'chirish
       await deleteDoc(doc(db, 'companies', id));
 
-      // Tegishli order/employee/expense larni o'chirish
       const ordersRef = collection(db, 'orders');
       const employeesRef = collection(db, 'employees');
       const expensesRef = collection(db, 'expenses');
@@ -305,7 +299,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // --- BUYURTMALAR ---
+  // BUYURTMALAR
 
   const addOrder = useCallback(
     (order: Omit<Order, 'id' | 'createdAt'>): Order => {
@@ -343,7 +337,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [orders],
   );
 
-  // --- XODIMLAR ---
+  // XODIMLAR
 
   const addEmployee = useCallback(
     (employee: Omit<Employee, 'id' | 'attendance'>) => {
@@ -377,13 +371,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const deleteEmployee = useCallback(async (id: string) => {
+    setEmployees((prev) => prev.filter((e) => e.id !== id));
+    try {
+      await deleteDoc(doc(db, 'employees', id));
+    } catch (error) {
+      console.error('Xodimni o‘chirishda xatolik:', error);
+    }
+  }, []);
+
   const getEmployeesByCompany = useCallback(
     (companyId: string) =>
       employees.filter((e) => e.companyId === companyId),
     [employees],
   );
 
-  // --- XARAJATLAR ---
+  // XARAJATLAR
 
   const addExpense = useCallback((expense: Omit<Expense, 'id'>) => {
     const newExpense: Expense = {
@@ -399,13 +402,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     ).catch(console.error);
   }, []);
 
+  const updateExpense = useCallback(
+    (id: string, updates: Partial<Expense>) => {
+      setExpenses((prev) =>
+        prev.map((e) => (e.id === id ? { ...e, ...updates } : e)),
+      );
+
+      updateDoc(
+        doc(db, 'expenses', id),
+        cleanUndefined(updates) as any,
+      ).catch(console.error);
+    },
+    [],
+  );
+
+  const deleteExpense = useCallback(async (id: string) => {
+    setExpenses((prev) => prev.filter((e) => e.id !== id));
+    try {
+      await deleteDoc(doc(db, 'expenses', id));
+    } catch (error) {
+      console.error('Xarajatni o‘chirishda xatolik:', error);
+    }
+  }, []);
+
   const getExpensesByCompany = useCallback(
     (companyId: string) =>
       expenses.filter((e) => e.companyId === companyId),
     [expenses],
   );
 
-  // --- SOZLAMALAR ---
+  // SOZLAMALAR
 
   const updateSettings = useCallback((updates: Partial<Settings>) => {
     setSettings((prev) => {
@@ -436,9 +462,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         employees,
         addEmployee,
         updateEmployee,
+        deleteEmployee,
         getEmployeesByCompany,
         expenses,
         addExpense,
+        updateExpense,
+        deleteExpense,
         getExpensesByCompany,
         settings,
         updateSettings,

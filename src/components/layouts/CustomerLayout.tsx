@@ -36,12 +36,7 @@ export function CustomerLayout() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-card border-t py-4 px-6">
-        <div className="max-w-3xl mx-auto text-center text-sm text-muted-foreground">
-          <p>© 2024 PureClean Kirxonasi. Barcha huquqlar himoyalangan.</p>
-          <p className="mt-1">Sizning kiyimlaringiz uchun sifatli tozalash</p>
-        </div>
-      </footer>
+      
     </div>
   );
 }

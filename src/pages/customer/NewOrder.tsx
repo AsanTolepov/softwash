@@ -97,7 +97,7 @@ export default function NewOrder() {
                 <Label htmlFor="firstName">Ism *</Label>
                 <Input
                   id="firstName"
-                  placeholder="Asan"
+                  placeholder="Abbos"
                   value={formData.firstName}
                   onChange={(e) =>
                     setFormData({ ...formData, firstName: e.target.value })
@@ -109,7 +109,7 @@ export default function NewOrder() {
                 <Label htmlFor="lastName">Familiya</Label>
                 <Input
                   id="lastName"
-                  placeholder="Tolepov"
+                  placeholder="Hamidov"
                   value={formData.lastName}
                   onChange={(e) =>
                     setFormData({ ...formData, lastName: e.target.value })
@@ -126,7 +126,7 @@ export default function NewOrder() {
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+998 88 562 21 06"
+                placeholder="+998 ** *** ** **"
                 value={formData.phone}
                 onChange={(e) =>
                   setFormData({ ...formData, phone: e.target.value })

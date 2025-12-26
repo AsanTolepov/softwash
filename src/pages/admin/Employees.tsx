@@ -1,9 +1,17 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Users, Search, Plus } from 'lucide-react';
+import {
+  Users,
+  Search,
+  Plus,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
+import { useI18n } from '@/lib/i18n';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,20 +40,42 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { formatCurrencyUZS } from '@/lib/utils';
+import type { Employee as EmployeeType } from '@/types';
 
 type EmployeeFilter = 'ALL' | 'ACTIVE' | 'INACTIVE';
 
 export default function Employees() {
-  const { user, getEmployeesByCompany, addEmployee, updateEmployee } = useApp();
+  const {
+    user,
+    getEmployeesByCompany,
+    addEmployee,
+    updateEmployee,
+    deleteEmployee,
+  } = useApp();
   const { toast } = useToast();
+  const { t } = useI18n();
 
-  const companyId = user?.type === 'admin' ? user.companyId : undefined;
-  const employees = companyId ? getEmployeesByCompany(companyId) : [];
+  const companyId = user?.companyId || '';
+  const employees = getEmployeesByCompany(companyId);
 
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<EmployeeFilter>('ALL');
+  const [statusFilter, setStatusFilter] =
+    useState<EmployeeFilter>('ALL');
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] =
+    useState<EmployeeType | null>(null);
+
   const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    role: '',
+    phone: '',
+    shift: 'Ertalab',
+    dailyRate: '',
+  });
+
+  const [editForm, setEditForm] = useState({
     firstName: '',
     lastName: '',
     role: '',
@@ -71,12 +101,12 @@ export default function Employees() {
 
   const handleAddEmployee = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     if (!companyId) {
       toast({
         variant: 'destructive',
         title: 'Xatolik',
-        description: 'Avval kompaniya admini sifatida tizimga kiring.',
+        description:
+          'Avval kompaniya admini sifatida tizimga kiring.',
       });
       return;
     }
@@ -109,17 +139,68 @@ export default function Employees() {
     setOpen(false);
   };
 
+  const openEditDialog = (emp: EmployeeType) => {
+    setEditingEmployee(emp);
+    setEditForm({
+      firstName: emp.firstName,
+      lastName: emp.lastName,
+      role: emp.role,
+      phone: emp.phone,
+      shift: emp.shift,
+      dailyRate: String(emp.dailyRate),
+    });
+    setEditOpen(true);
+  };
+
+  const handleEditEmployee = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingEmployee) return;
+
+    updateEmployee(editingEmployee.id, {
+      firstName: editForm.firstName,
+      lastName: editForm.lastName,
+      role: editForm.role,
+      phone: editForm.phone,
+      shift: editForm.shift,
+      dailyRate: parseFloat(editForm.dailyRate) || 0,
+    });
+
+    toast({
+      title: 'Xodim yangilandi',
+      description: 'Xodim ma’lumotlari muvaffaqiyatli yangilandi.',
+    });
+
+    setEditOpen(false);
+    setEditingEmployee(null);
+  };
+
+  const handleDeleteEmployee = async (emp: EmployeeType) => {
+    const ok = window.confirm(
+      `"${emp.firstName} ${emp.lastName}" xodimini o‘chirmoqchimisiz?`,
+    );
+    if (!ok) return;
+
+    await deleteEmployee(emp.id);
+    toast({
+      title: 'Xodim o‘chirildi',
+      description: 'Xodim muvaffaqiyatli o‘chirildi.',
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Xodimlar</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            {t('employeesPage.title')}
+          </h1>
           <p className="text-muted-foreground">
-            Xodimlaringiz va ularning faoliyatini boshqaring
+            {t('employeesPage.subtitle')}
           </p>
         </div>
 
+        {/* Yangi xodim qo‘shish */}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -138,7 +219,10 @@ export default function Employees() {
                   <Input
                     value={form.firstName}
                     onChange={(e) =>
-                      setForm({ ...form, firstName: e.target.value })
+                      setForm({
+                        ...form,
+                        firstName: e.target.value,
+                      })
                     }
                     required
                   />
@@ -148,7 +232,10 @@ export default function Employees() {
                   <Input
                     value={form.lastName}
                     onChange={(e) =>
-                      setForm({ ...form, lastName: e.target.value })
+                      setForm({
+                        ...form,
+                        lastName: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -189,7 +276,9 @@ export default function Employees() {
                     }
                   >
                     <option value="Ertalab">Ertalab</option>
-                    <option value="Tushlikdan keyin">Tushlikdan keyin</option>
+                    <option value="Tushlikdan keyin">
+                      Tushlikdan keyin
+                    </option>
                     <option value="Kechki">Kechki</option>
                   </select>
                 </div>
@@ -200,7 +289,10 @@ export default function Employees() {
                     min={0}
                     value={form.dailyRate}
                     onChange={(e) =>
-                      setForm({ ...form, dailyRate: e.target.value })
+                      setForm({
+                        ...form,
+                        dailyRate: e.target.value,
+                      })
                     }
                     placeholder="50000"
                   />
@@ -222,7 +314,9 @@ export default function Employees() {
             <div className="relative w-full sm:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Ism yoki telefon bo‘yicha qidirish..."
+                placeholder={t(
+                  'employeesPage.searchPlaceholder',
+                )}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -231,12 +325,20 @@ export default function Employees() {
 
             <Tabs
               value={statusFilter}
-              onValueChange={(v) => setStatusFilter(v as EmployeeFilter)}
+              onValueChange={(v) =>
+                setStatusFilter(v as EmployeeFilter)
+              }
             >
               <TabsList>
-                <TabsTrigger value="ALL">Barchasi</TabsTrigger>
-                <TabsTrigger value="ACTIVE">Faol</TabsTrigger>
-                <TabsTrigger value="INACTIVE">Nofaol</TabsTrigger>
+                <TabsTrigger value="ALL">
+                  {t('employeesPage.tabs.all')}
+                </TabsTrigger>
+                <TabsTrigger value="ACTIVE">
+                  {t('employeesPage.tabs.active')}
+                </TabsTrigger>
+                <TabsTrigger value="INACTIVE">
+                  {t('employeesPage.tabs.inactive')}
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -244,16 +346,21 @@ export default function Employees() {
 
         <CardContent>
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[40%]">Xodim</TableHead>
-                <TableHead>Lavozimi</TableHead>
-                <TableHead>Telefon</TableHead>
-                <TableHead>Smena</TableHead>
-                <TableHead>Kundalik ish haqi</TableHead>
-                <TableHead className="text-center">Faollik</TableHead>
-              </TableRow>
-            </TableHeader>
+          <TableHeader>
+  <TableRow>
+    <TableHead className="w-[40%]">
+      {t('employeesPage.table.employee')}
+    </TableHead>
+    <TableHead>{t('employeesPage.table.role')}</TableHead>
+    <TableHead>{t('employeesPage.table.phone')}</TableHead>
+    <TableHead>{t('employeesPage.table.shift')}</TableHead>
+    <TableHead>{t('employeesPage.table.dailyRate')}</TableHead>
+    <TableHead className="text-center">
+      {t('employeesPage.table.active')}
+    </TableHead>
+    <TableHead>{t('employeesPage.table.actions')}</TableHead>
+  </TableRow>
+</TableHeader>
             <TableBody>
               {filteredEmployees.map((emp) => (
                 <TableRow key={emp.id}>
@@ -273,11 +380,15 @@ export default function Employees() {
                   <TableCell>{emp.role}</TableCell>
                   <TableCell>{emp.phone}</TableCell>
                   <TableCell>{emp.shift}</TableCell>
-                  <TableCell>{formatCurrencyUZS(emp.dailyRate)}</TableCell>
+                  <TableCell>
+                    {formatCurrencyUZS(emp.dailyRate)}
+                  </TableCell>
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-2">
                       <Badge
-                        variant={emp.isActive ? 'default' : 'secondary'}
+                        variant={
+                          emp.isActive ? 'default' : 'secondary'
+                        }
                         className="text-xs"
                       >
                         {emp.isActive ? 'Faol' : 'Nofaol'}
@@ -285,9 +396,29 @@ export default function Employees() {
                       <Switch
                         checked={emp.isActive}
                         onCheckedChange={(checked) =>
-                          updateEmployee(emp.id, { isActive: checked })
+                          updateEmployee(emp.id, {
+                            isActive: checked,
+                          })
                         }
                       />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditDialog(emp)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteEmployee(emp)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -296,7 +427,7 @@ export default function Employees() {
               {filteredEmployees.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="text-center text-muted-foreground py-8"
                   >
                     Xodimlar topilmadi
@@ -307,6 +438,115 @@ export default function Employees() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Tahrirlash dialogi */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xodim ma’lumotlarini tahrirlash</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={handleEditEmployee}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Ismi</Label>
+                <Input
+                  value={editForm.firstName}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      firstName: e.target.value,
+                    })
+                  }
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Familiyasi</Label>
+                <Input
+                  value={editForm.lastName}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      lastName: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Lavozimi</Label>
+              <Input
+                value={editForm.role}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    role: e.target.value,
+                  })
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Telefon</Label>
+              <Input
+                type="tel"
+                value={editForm.phone}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    phone: e.target.value,
+                  })
+                }
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Smena</Label>
+                <select
+                  className="border-input bg-background rounded-md px-3 py-2 text-sm"
+                  value={editForm.shift}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      shift: e.target.value,
+                    })
+                  }
+                >
+                  <option value="Ertalab">Ertalab</option>
+                  <option value="Tushlikdan keyin">
+                    Tushlikdan keyin
+                  </option>
+                  <option value="Kechki">Kechki</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Kundalik ish haqi (so‘m)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={editForm.dailyRate}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      dailyRate: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full">
+              O‘zgarishlarni saqlash
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

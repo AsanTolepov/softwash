@@ -109,19 +109,6 @@ export default function Login() {
                 )}
               </Button>
             </form>
-
-            {/* Demo credentials */}
-            <div className="mt-6 p-4 bg-muted rounded-lg">
-              <p className="text-sm font-medium text-foreground mb-2">Demo hisoblar:</p>
-              <div className="space-y-1 text-sm text-muted-foreground">
-                <p>
-                  <span className="font-medium">Superadmin:</span> superadmin / superadmin
-                </p>
-                <p>
-                  <span className="font-medium">Kompaniya (CleanWave):</span> cleanwave / clean123
-                </p>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
