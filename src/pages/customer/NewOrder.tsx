@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Calendar, Package, Phone, User, FileText, Send } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { useApp } from '@/contexts/AppContext';
-import { serviceTypes } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,13 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 
 export default function NewOrder() {
@@ -34,7 +26,6 @@ export default function NewOrder() {
     firstName: '',
     lastName: '',
     phone: '',
-    serviceType: '',
     itemCount: '',
     pickupDate: format(addDays(new Date(), 3), 'yyyy-MM-dd'),
     notes: '',
@@ -46,7 +37,8 @@ export default function NewOrder() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.firstName || !formData.phone || !formData.serviceType || !formData.itemCount) {
+    // Faqat zarur maydonlarni tekshiramiz (xizmat turi endi kerak emas)
+    if (!formData.firstName || !formData.phone || !formData.itemCount) {
       toast({
         variant: 'destructive',
         title: 'Ma’lumotlar yetarli emas',
@@ -64,7 +56,8 @@ export default function NewOrder() {
       },
       details: {
         itemCount: parseInt(formData.itemCount),
-        serviceType: formData.serviceType,
+        // Xizmat turi endi formadan emas, bitta umumiy qiymatdan olinadi
+        serviceType: 'Kiyim yuvish',
         notes: formData.notes || undefined,
         pickupDate: formData.pickupDate,
         dateIn: format(new Date(), 'yyyy-MM-dd'),
@@ -104,7 +97,7 @@ export default function NewOrder() {
                 <Label htmlFor="firstName">Ism *</Label>
                 <Input
                   id="firstName"
-                  placeholder="Ali"
+                  placeholder="Asan"
                   value={formData.firstName}
                   onChange={(e) =>
                     setFormData({ ...formData, firstName: e.target.value })
@@ -116,7 +109,7 @@ export default function NewOrder() {
                 <Label htmlFor="lastName">Familiya</Label>
                 <Input
                   id="lastName"
-                  placeholder="Karimov"
+                  placeholder="Tolepov"
                   value={formData.lastName}
                   onChange={(e) =>
                     setFormData({ ...formData, lastName: e.target.value })
@@ -133,7 +126,7 @@ export default function NewOrder() {
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+998 (90) 123-45-67"
+                placeholder="+998 88 562 21 06"
                 value={formData.phone}
                 onChange={(e) =>
                   setFormData({ ...formData, phone: e.target.value })
@@ -150,26 +143,7 @@ export default function NewOrder() {
               Xizmat tafsilotlari
             </h3>
 
-            <div className="space-y-2">
-              <Label htmlFor="serviceType">Xizmat turi *</Label>
-              <Select
-                value={formData.serviceType}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, serviceType: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Xizmat turini tanlang" />
-                </SelectTrigger>
-                <SelectContent>
-                  {serviceTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Xizmat turi maydoni olib tashlandi */}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -178,7 +152,7 @@ export default function NewOrder() {
                   id="itemCount"
                   type="number"
                   min="1"
-                  placeholder="5"
+                  placeholder="1"
                   value={formData.itemCount}
                   onChange={(e) =>
                     setFormData({ ...formData, itemCount: e.target.value })
@@ -210,7 +184,7 @@ export default function NewOrder() {
               </Label>
               <Textarea
                 id="notes"
-                placeholder="Masalan: nozik mato, baland haroratda yuvmang va hokazo..."
+                placeholder="Masalan: nozik mato, haroratda yuvmang va joy..."
                 value={formData.notes}
                 onChange={(e) =>
                   setFormData({ ...formData, notes: e.target.value })
