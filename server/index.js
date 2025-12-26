@@ -4,26 +4,25 @@ const cors = require('cors');
 
 const app = express();
 
-// CORS – hozircha hamma manbalarga ruxsat (dev uchun).
-// Keyinchalik Render front-end URL'ingizni qo'yib cheklab qo'yishingiz mumkin.
 app.use(
   cors({
-    origin: '*',
+    origin: '*', // hozircha hamma domainlardan ruxsat; xohlasa keyin cheklaysiz
   }),
 );
 
 app.use(express.json());
 
-// Render portni process.env.PORT dan beradi.
 const PORT = process.env.PORT || 3001;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
-// Test uchun oddiy endpoint
+// Agar hohlasangiz, model nomini ham env'dan olish mumkin
+const GROQ_MODEL =
+  process.env.GROQ_MODEL || 'llama-3.1-8b-instant'; // YANGI MODEL
+
 app.get('/', (req, res) => {
   res.send('SoftWash translate server ishlayapti');
 });
 
-// Tarjima endpointi
 app.post('/api/translate', async (req, res) => {
   const { text, sourceLang = 'uz', targetLang = 'ru' } = req.body || {};
 
@@ -52,7 +51,7 @@ app.post('/api/translate', async (req, res) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama3-8b-8192',
+          model: GROQ_MODEL, // ESKI 'llama3-8b-8192' o'rniga shu
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.2,
         }),
