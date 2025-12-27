@@ -1,3 +1,4 @@
+// src/pages/admin/Expenses.tsx
 import { useState } from 'react';
 import {
   format,
@@ -15,7 +16,7 @@ import {
 
 import { useApp } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, getLocalizedText } from '@/lib/i18n';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,7 +54,7 @@ export default function Expenses() {
     deleteExpense,
   } = useApp();
   const { toast } = useToast();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const companyId = user?.companyId || '';
   const expenses = getExpensesByCompany(companyId);
@@ -81,52 +82,75 @@ export default function Expenses() {
     .reduce((sum, e) => sum + e.amount, 0);
 
   const filteredExpenses = expenses.filter((e) => {
+    const productText = getLocalizedText(e.product, lang).toLowerCase();
+    const notesText = getLocalizedText(e.notes, lang).toLowerCase();
+
     const matchesSearch =
       search === '' ||
-      e.product.toLowerCase().includes(search.toLowerCase()) ||
-      (e.notes ?? '').toLowerCase().includes(search.toLowerCase());
+      productText.includes(search.toLowerCase()) ||
+      notesText.includes(search.toLowerCase());
     return matchesSearch;
   });
 
-  // Xarajat qo'shish + Groq tarjimasi
+  // Xarajat qo'shish + Groq yordamida 3 tilda saqlash
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!companyId) return;
 
+    const productUz = form.product.trim();
+    const notesUz = form.notes.trim();
+
+    if (!productUz) {
+      toast({
+        variant: 'destructive',
+        title: 'Ma’lumot yetarli emas',
+        description: 'Mahsulot nomini kiriting.',
+      });
+      return;
+    }
+
     try {
-      const productUz = form.product;
-      const notesUz = form.notes || '';
+      let productRu: string | undefined;
+      let productEn: string | undefined;
+      let notesRu: string | undefined;
+      let notesEn: string | undefined;
 
-      if (!productUz.trim()) {
-        toast({
-          variant: 'destructive',
-          title: 'Ma’lumot yetarli emas',
-          description: 'Mahsulot nomini kiriting.',
-        });
-        return;
-      }
+      // Tarjima (xatolarsiz bo'lsa)
+      try {
+        [productRu, productEn] = await Promise.all([
+          translateTextClient(productUz, 'uz', 'ru'),
+          translateTextClient(productUz, 'uz', 'en'),
+        ]);
 
-      // Groq orqali (kelajak uchun) tarjimalar
-      await Promise.all([
-        translateTextClient(productUz, 'uz', 'ru'),
-        translateTextClient(productUz, 'uz', 'en'),
-      ]).catch(() => null);
-
-      if (notesUz) {
-        await Promise.all([
-          translateTextClient(notesUz, 'uz', 'ru'),
-          translateTextClient(notesUz, 'uz', 'en'),
-        ]).catch(() => null);
+        if (notesUz) {
+          [notesRu, notesEn] = await Promise.all([
+            translateTextClient(notesUz, 'uz', 'ru'),
+            translateTextClient(notesUz, 'uz', 'en'),
+          ]);
+        }
+      } catch (err) {
+        console.error('Groq tarjima xatosi (xarajat):', err);
+        // Tarjima ishlamasa ham, faqat uzbekcha bilan davom etamiz
       }
 
       addExpense({
         companyId,
         date: form.date,
-        product: productUz,
+        product: {
+          uz: productUz,
+          ru: productRu,
+          en: productEn,
+        },
         quantity: Number(form.quantity) || 0,
         unit: form.unit || 'birlik',
         amount: Number(form.amount) || 0,
-        notes: notesUz || undefined,
+        notes: notesUz
+          ? {
+              uz: notesUz,
+              ru: notesRu,
+              en: notesEn,
+            }
+          : undefined,
       });
 
       setForm({
@@ -322,9 +346,7 @@ export default function Expenses() {
                 <TableHead>
                   {t('expensesPage.table.amount')}
                 </TableHead>
-                <TableHead>
-                  {t('expensesPage.table.notes')}
-                </TableHead>
+                <TableHead>{t('expensesPage.table.notes')}</TableHead>
                 <TableHead>
                   {t('expensesPage.table.actions')}
                 </TableHead>
@@ -334,7 +356,9 @@ export default function Expenses() {
               {filteredExpenses.map((e) => (
                 <TableRow key={e.id}>
                   <TableCell>{e.date}</TableCell>
-                  <TableCell>{e.product}</TableCell>
+                  <TableCell>
+                    {getLocalizedText(e.product, lang)}
+                  </TableCell>
                   <TableCell>
                     {e.quantity} {e.unit}
                   </TableCell>
@@ -342,7 +366,7 @@ export default function Expenses() {
                     {formatCurrencyUZS(e.amount)}
                   </TableCell>
                   <TableCell className="max-w-xs truncate">
-                    {e.notes}
+                    {getLocalizedText(e.notes, lang)}
                   </TableCell>
                   <TableCell>
                     <Button

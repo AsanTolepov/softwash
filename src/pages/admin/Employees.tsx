@@ -1,3 +1,4 @@
+// src/pages/admin/Employees.tsx
 import { useState } from 'react';
 import { format } from 'date-fns';
 import {
@@ -10,7 +11,8 @@ import {
 
 import { useApp } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
-import { useI18n } from '@/lib/i18n';
+import { useI18n, getLocalizedText } from '@/lib/i18n';
+import { translateTextClient } from '@/services/translate';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,7 +55,7 @@ export default function Employees() {
     deleteEmployee,
   } = useApp();
   const { toast } = useToast();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const companyId = user?.companyId || '';
   const employees = getEmployeesByCompany(companyId);
@@ -99,7 +101,10 @@ export default function Employees() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleAddEmployee = (e: React.FormEvent<HTMLFormElement>) => {
+  // Yangi xodim qo'shish – ro'lni Groq orqali 3 tilda saqlash
+  const handleAddEmployee = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
     e.preventDefault();
     if (!companyId) {
       toast({
@@ -111,11 +116,30 @@ export default function Employees() {
       return;
     }
 
+    const roleUz = form.role.trim() || 'Xodim';
+
+    let roleRu: string | undefined;
+    let roleEn: string | undefined;
+
+    try {
+      [roleRu, roleEn] = await Promise.all([
+        translateTextClient(roleUz, 'uz', 'ru'),
+        translateTextClient(roleUz, 'uz', 'en'),
+      ]);
+    } catch (err) {
+      console.error('Groq tarjima xatosi (xodim roli):', err);
+      // Agar tarjima bo'lmasa, faqat uzbekcha bilan ishlaymiz
+    }
+
     addEmployee({
       companyId,
       firstName: form.firstName,
       lastName: form.lastName,
-      role: form.role || 'Xodim',
+      role: {
+        uz: roleUz,
+        ru: roleRu,
+        en: roleEn,
+      },
       phone: form.phone,
       shift: form.shift,
       isActive: true,
@@ -144,7 +168,11 @@ export default function Employees() {
     setEditForm({
       firstName: emp.firstName,
       lastName: emp.lastName,
-      role: emp.role,
+      role:
+        emp.role.uz ||
+        emp.role.ru ||
+        emp.role.en ||
+        '',
       phone: emp.phone,
       shift: emp.shift,
       dailyRate: String(emp.dailyRate),
@@ -152,17 +180,23 @@ export default function Employees() {
     setEditOpen(true);
   };
 
-  const handleEditEmployee = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleEditEmployee = (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
     e.preventDefault();
     if (!editingEmployee) return;
 
     updateEmployee(editingEmployee.id, {
       firstName: editForm.firstName,
       lastName: editForm.lastName,
-      role: editForm.role,
       phone: editForm.phone,
       shift: editForm.shift,
       dailyRate: parseFloat(editForm.dailyRate) || 0,
+      // Faqat uz ro'lini yangilaymiz, ru/en eski bo'lib qoladi
+      role: {
+        ...editingEmployee.role,
+        uz: editForm.role,
+      },
     });
 
     toast({
@@ -200,7 +234,7 @@ export default function Employees() {
           </p>
         </div>
 
-        {/* Yangi xodim qo‘shish */}
+        {/* Yangi xodim qo'shish */}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -346,21 +380,31 @@ export default function Employees() {
 
         <CardContent>
           <Table>
-          <TableHeader>
-  <TableRow>
-    <TableHead className="w-[40%]">
-      {t('employeesPage.table.employee')}
-    </TableHead>
-    <TableHead>{t('employeesPage.table.role')}</TableHead>
-    <TableHead>{t('employeesPage.table.phone')}</TableHead>
-    <TableHead>{t('employeesPage.table.shift')}</TableHead>
-    <TableHead>{t('employeesPage.table.dailyRate')}</TableHead>
-    <TableHead className="text-center">
-      {t('employeesPage.table.active')}
-    </TableHead>
-    <TableHead>{t('employeesPage.table.actions')}</TableHead>
-  </TableRow>
-</TableHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[40%]">
+                  {t('employeesPage.table.employee')}
+                </TableHead>
+                <TableHead>
+                  {t('employeesPage.table.role')}
+                </TableHead>
+                <TableHead>
+                  {t('employeesPage.table.phone')}
+                </TableHead>
+                <TableHead>
+                  {t('employeesPage.table.shift')}
+                </TableHead>
+                <TableHead>
+                  {t('employeesPage.table.dailyRate')}
+                </TableHead>
+                <TableHead className="text-center">
+                  {t('employeesPage.table.active')}
+                </TableHead>
+                <TableHead>
+                  {t('employeesPage.table.actions')}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
             <TableBody>
               {filteredEmployees.map((emp) => (
                 <TableRow key={emp.id}>
@@ -377,7 +421,9 @@ export default function Employees() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{emp.role}</TableCell>
+                  <TableCell>
+                    {getLocalizedText(emp.role, lang)}
+                  </TableCell>
                   <TableCell>{emp.phone}</TableCell>
                   <TableCell>{emp.shift}</TableCell>
                   <TableCell>

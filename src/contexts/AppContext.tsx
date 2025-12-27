@@ -1,3 +1,4 @@
+// src/contexts/AppContext.tsx
 import React, {
   createContext,
   useContext,
@@ -5,7 +6,15 @@ import React, {
   useCallback,
   useEffect,
 } from 'react';
-import { Company, Order, Employee, Expense, User, Settings } from '@/types';
+import {
+  Company,
+  Order,
+  Employee,
+  Expense,
+  User,
+  Settings,
+  LocalizedString,
+} from '@/types';
 import {
   mockCompanies,
   mockOrders,
@@ -26,38 +35,32 @@ import {
 } from 'firebase/firestore';
 
 interface AppContextType {
-  // Auth
   user: User | null;
   login: (username: string, password: string) => boolean;
   logout: () => void;
 
-  // Companies
   companies: Company[];
   addCompany: (company: Omit<Company, 'id'>) => void;
   updateCompany: (id: string, updates: Partial<Company>) => void;
   deleteCompany: (id: string) => Promise<void>;
 
-  // Orders
   orders: Order[];
   addOrder: (order: Omit<Order, 'id' | 'createdAt'>) => Order;
   updateOrder: (id: string, updates: Partial<Order>) => void;
   getOrdersByCompany: (companyId: string) => Order[];
 
-  // Employees
   employees: Employee[];
   addEmployee: (employee: Omit<Employee, 'id' | 'attendance'>) => void;
   updateEmployee: (id: string, updates: Partial<Employee>) => void;
   deleteEmployee: (id: string) => Promise<void>;
   getEmployeesByCompany: (companyId: string) => Employee[];
 
-  // Expenses
   expenses: Expense[];
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   updateExpense: (id: string, updates: Partial<Expense>) => void;
   deleteExpense: (id: string) => Promise<void>;
   getExpensesByCompany: (companyId: string) => Expense[];
 
-  // Settings
   settings: Settings;
   updateSettings: (updates: Partial<Settings>) => void;
 }
@@ -91,6 +94,32 @@ function cleanUndefined<T>(value: T): T {
     return result;
   }
   return value;
+}
+
+// Eski string ma'lumotlarni LocalizedString ko'rinishiga o'tkazish
+function normalizeLocalized(
+  value: any,
+): LocalizedString | undefined {
+  if (!value) return undefined;
+  if (typeof value === 'string') {
+    return { uz: value };
+  }
+  return value as LocalizedString;
+}
+
+function normalizeEmployee(raw: any): Employee {
+  return {
+    ...raw,
+    role: normalizeLocalized(raw.role) || {},
+  } as Employee;
+}
+
+function normalizeExpense(raw: any): Expense {
+  return {
+    ...raw,
+    product: normalizeLocalized(raw.product) || {},
+    notes: normalizeLocalized(raw.notes),
+  } as Expense;
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -138,30 +167,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           collection(db, 'employees'),
         );
         if (employeesSnap.empty) {
-          setEmployees(mockEmployees);
+          setEmployees(mockEmployees.map(normalizeEmployee));
           await Promise.all(
             mockEmployees.map((e) =>
-              setDoc(doc(db, 'employees', e.id), cleanUndefined(e)),
+              setDoc(
+                doc(db, 'employees', e.id),
+                cleanUndefined(e),
+              ),
             ),
           );
         } else {
           setEmployees(
-            employeesSnap.docs.map((d) => d.data() as Employee),
+            employeesSnap.docs.map((d) =>
+              normalizeEmployee(d.data()),
+            ),
           );
         }
 
         // Xarajatlar
         const expensesSnap = await getDocs(collection(db, 'expenses'));
         if (expensesSnap.empty) {
-          setExpenses(mockExpenses);
+          setExpenses(mockExpenses.map(normalizeExpense));
           await Promise.all(
             mockExpenses.map((e) =>
-              setDoc(doc(db, 'expenses', e.id), cleanUndefined(e)),
+              setDoc(
+                doc(db, 'expenses', e.id),
+                cleanUndefined(e),
+              ),
             ),
           );
         } else {
           setExpenses(
-            expensesSnap.docs.map((d) => d.data() as Expense),
+            expensesSnap.docs.map((d) =>
+              normalizeExpense(d.data()),
+            ),
           );
         }
 
@@ -270,7 +309,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const deleteCompany = useCallback(async (id: string) => {
-    // Lokal state
     setCompanies((prev) => prev.filter((c) => c.id !== id));
     setOrders((prev) => prev.filter((o) => o.companyId !== id));
     setEmployees((prev) => prev.filter((e) => e.companyId !== id));
@@ -404,7 +442,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateExpense = useCallback(
     (id: string, updates: Partial<Expense>) => {
-      setExpenses((prev) =>
+      setExpenses((prev) =>  
         prev.map((e) => (e.id === id ? { ...e, ...updates } : e)),
       );
 

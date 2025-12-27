@@ -1,6 +1,13 @@
-// src/types.ts
+// src/types/index.ts
 
 export type OrderStatus = 'NEW' | 'WASHING' | 'READY' | 'DELIVERED';
+
+// Ko'p tilli matn tipi
+export interface LocalizedString {
+  uz?: string;
+  ru?: string;
+  en?: string;
+}
 
 export interface Company {
   id: string;
@@ -11,8 +18,6 @@ export interface Company {
   password: string;
 
   // Zaxira login/parol – faqat siz (superadmin) bilasiz
-  // Karxona egasi login/parolni unutsa, siz shu orqali kirib,
-  // uning login/parolini qayta o'rnatib berasiz.
   backupLogin?: string;
   backupPassword?: string;
 
@@ -34,7 +39,7 @@ export interface Customer {
 
 export interface OrderDetails {
   itemCount: number;
-  serviceType: string;
+  serviceType: string; // hozircha oddiy string, keyin enum + i18n qilsa bo'ladi
   notes?: string;
   pickupDate?: string;
   dateIn: string;
@@ -56,12 +61,13 @@ export interface Order {
   createdAt: string;
 }
 
+// Employee roli endi LocalizedString bo'ladi
 export interface Employee {
   id: string;
   companyId: string;
   firstName: string;
   lastName: string;
-  role: string;
+  role: LocalizedString; // oldingi string edi
   phone: string;
   shift: string;
   isActive: boolean;
@@ -70,15 +76,16 @@ export interface Employee {
   attendance: string[];
 }
 
+// Expense mahsulot nomi va izohi ko'p tilli
 export interface Expense {
   id: string;
   companyId: string;
   date: string;
-  product: string;
+  product: LocalizedString; // oldingi: string
   quantity: number;
   unit: string;
   amount: number;
-  notes?: string;
+  notes?: LocalizedString; // oldingi: string | undefined
 }
 
 export interface User {
@@ -89,7 +96,7 @@ export interface User {
 }
 
 export interface Settings {
-  language: string;
+  language: string; // 'uz' | 'ru' | 'en'
   currency: string;
   theme: 'light' | 'dark';
   dailyRevenueTarget: number;

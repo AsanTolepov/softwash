@@ -3,6 +3,7 @@ import { uz } from '@/locales/uz';
 import { ru } from '@/locales/ru';
 import { en } from '@/locales/en';
 import { useApp } from '@/contexts/AppContext';
+import type { LocalizedString } from '@/types';
 
 export type Language = 'uz' | 'ru' | 'en';
 
@@ -34,8 +35,16 @@ function translate(path: string, lang: Language): string {
     return translate(path, 'uz');
   }
 
-  // hech nima topilmasa, o'zini qaytaramiz
   return path;
+}
+
+// Ko'p tilli matnni tanlangan tilga qarab olish helper'i
+export function getLocalizedText(
+  obj?: LocalizedString,
+  lang: Language = 'uz',
+): string {
+  if (!obj) return '';
+  return obj[lang] || obj.uz || obj.ru || obj.en || '';
 }
 
 /**
