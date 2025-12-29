@@ -19,22 +19,40 @@ export const uz = {
       superadminName: 'Superadmin',
       adminName: 'Admin',
     },
+  
     settingsPage: {
       title: 'Sozlamalar',
-      subtitle: 'Tizim tilini, valyutani va tashqi ko‘rinishini sozlang',
+      subtitle:
+        'Tizim tilini, valyutani va tashqi ko‘rinishini sozlang',
       generalTitle: 'Umumiy',
-      generalDescription: 'Tizimning asosiy tilini va valyutasini tanlang',
+      generalDescription:
+        'Tizimning asosiy tilini va valyutasini tanlang',
       languageLabel: 'Til',
       currencyLabel: 'Valyuta',
-      appearanceTitle: 'Ko‘rinish va maqsadlar',
+  
+      appearanceTitle: 'Ko‘rinish va mavzular',
       appearanceDescription:
-        'Tungi/kunlik rejim va kundalik daromad maqsadini belgilang',
+        'Tungi/kunlik rejim va boshqaruv paneli dizaynini tanlang',
       themeLabel: 'Mavzu (tema)',
       lightTheme: 'Yorug‘ (light)',
       darkTheme: 'Tungi (dark)',
-      targetLabel: 'Kundalik daromad maqsadi (so‘m)',
+      selectedLabel: 'Tanlangan',
+  
+      dashboardThemeLabel: 'Boshqaruv paneli mavzusi',
+      dashboardThemeClassic: 'Klassik',
+      dashboardThemeCompact: 'Kompakt',
+      dashboardThemeCards: 'Kartali',
+      dashboardThemeHint:
+        'Bu parametr faqat admin panelidagi boshqaruv panelining ko‘rinishini o‘zgartiradi.',
+  
       saveButton: 'O‘zgarishlarni saqlash',
+      toasts: {
+        savedTitle: 'Sozlamalar saqlandi',
+        savedDescription:
+          'Tanlangan parametrlar muvaffaqiyatli yangilandi.',
+      },
     },
+  
     dashboardPage: {
       title: 'Boshqaruv paneli',
       subtitle: 'Kir yuvish biznesingiz bo‘yicha qisqacha statistika',
@@ -46,6 +64,7 @@ export const uz = {
       },
       chartTitle: 'So‘nggi 30 kunlik kunlik daromad',
     },
+  
     ordersPage: {
       title: 'Buyurtmalar',
       subtitle: 'Mijoz buyurtmalarini boshqaring',
@@ -68,6 +87,7 @@ export const uz = {
         actions: 'Amallar',
       },
     },
+  
     employeesPage: {
       title: 'Xodimlar',
       subtitle: 'Xodimlaringiz va ularning faoliyatini boshqaring',
@@ -86,7 +106,48 @@ export const uz = {
         active: 'Faollik',
         actions: 'Amallar',
       },
+      addButton: 'Xodim qo‘shish',
+      dialog: {
+        addTitle: 'Yangi xodim qo‘shish',
+        editTitle: 'Xodim ma’lumotlarini tahrirlash',
+        save: 'Saqlash',
+        saveChanges: 'O‘zgarishlarni saqlash',
+      },
+      form: {
+        firstName: 'Ismi',
+        lastName: 'Familiyasi',
+        role: 'Lavozimi',
+        rolePlaceholder: 'Yuvuvchi, kuryer, menejer...',
+        phone: 'Telefon',
+        shift: 'Smena',
+        shiftMorning: 'Ertalab',
+        shiftAfternoon: 'Tushlikdan keyin',
+        shiftEvening: 'Kechki',
+        dailyRate: 'Kundalik ish haqi (so‘m)',
+        dailyRatePlaceholder: '50000',
+      },
+      defaultRole: 'Xodim',
+      hiredAtLabel: 'Ishga olingan',
+      badge: {
+        active: 'Faol',
+        inactive: 'Nofaol',
+      },
+      toasts: {
+        createdTitle: 'Xodim qo‘shildi',
+        createdDescription: 'Yangi xodim muvaffaqiyatli saqlandi.',
+        updatedTitle: 'Xodim yangilandi',
+        updatedDescription:
+          'Xodim ma’lumotlari muvaffaqiyatli yangilandi.',
+        deletedTitle: 'Xodim o‘chirildi',
+        deletedDescription: 'Xodim muvaffaqiyatli o‘chirildi.',
+        mustBeCompanyAdminTitle: 'Xatolik',
+        mustBeCompanyAdminDescription:
+          'Avval kompaniya admini sifatida tizimga kiring.',
+      },
+      confirmDelete: '“{name}” xodimini o‘chirmoqchimisiz?',
+      empty: 'Xodimlar topilmadi',
     },
+  
     expensesPage: {
       title: 'Xarajatlar',
       subtitle: 'Sarflangan mahsulotlar va xizmatlarni kuzatib boring',
@@ -112,6 +173,7 @@ export const uz = {
         actions: 'Amallar',
       },
     },
+  
     reportsPage: {
       title: 'Hisobotlar',
       subtitle: 'Moliyaviy va operatsion ko‘rsatkichlar',

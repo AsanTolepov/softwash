@@ -19,22 +19,40 @@ export const en = {
       superadminName: 'Superadmin',
       adminName: 'Admin',
     },
+  
     settingsPage: {
       title: 'Settings',
-      subtitle: 'Configure language, currency, and appearance',
+      subtitle:
+        'Configure language, currency, and appearance',
       generalTitle: 'General',
-      generalDescription: 'Select the main language and currency',
+      generalDescription:
+        'Select the main language and currency',
       languageLabel: 'Language',
       currencyLabel: 'Currency',
-      appearanceTitle: 'Appearance & Goals',
+  
+      appearanceTitle: 'Appearance & Themes',
       appearanceDescription:
-        'Theme and daily revenue target',
+        'Choose light/dark mode and dashboard layout',
       themeLabel: 'Theme',
       lightTheme: 'Light',
       darkTheme: 'Dark',
-      targetLabel: 'Daily revenue target (UZS)',
+      selectedLabel: 'Selected',
+  
+      dashboardThemeLabel: 'Dashboard theme',
+      dashboardThemeClassic: 'Classic',
+      dashboardThemeCompact: 'Compact',
+      dashboardThemeCards: 'Cards',
+      dashboardThemeHint:
+        'This option only affects the layout of the admin dashboard.',
+  
       saveButton: 'Save changes',
+      toasts: {
+        savedTitle: 'Settings saved',
+        savedDescription:
+          'Your preferences have been updated successfully.',
+      },
     },
+  
     dashboardPage: {
       title: 'Dashboard',
       subtitle: 'Overview of your laundry business',
@@ -46,6 +64,7 @@ export const en = {
       },
       chartTitle: 'Daily Revenue (Last 30 Days)',
     },
+  
     ordersPage: {
       title: 'Orders',
       subtitle: 'Manage customer orders',
@@ -68,6 +87,7 @@ export const en = {
         actions: '',
       },
     },
+  
     employeesPage: {
       title: 'Employees',
       subtitle: 'Manage your staff and their status',
@@ -84,12 +104,58 @@ export const en = {
         shift: 'Shift',
         dailyRate: 'Daily rate',
         active: 'Active',
+        actions: 'Actions',
       },
+      addButton: 'Add employee',
+      dialog: {
+        addTitle: 'Add new employee',
+        editTitle: 'Edit employee details',
+        save: 'Save',
+        saveChanges: 'Save changes',
+      },
+      form: {
+        firstName: 'First name',
+        lastName: 'Last name',
+        role: 'Role',
+        rolePlaceholder: 'Washer, courier, manager...',
+        phone: 'Phone',
+        shift: 'Shift',
+        shiftMorning: 'Morning',
+        shiftAfternoon: 'Afternoon',
+        shiftEvening: 'Evening',
+        dailyRate: 'Daily rate (UZS)',
+        dailyRatePlaceholder: '50000',
+      },
+      defaultRole: 'Employee',
+      hiredAtLabel: 'Hired on',
+      badge: {
+        active: 'Active',
+        inactive: 'Inactive',
+      },
+      toasts: {
+        createdTitle: 'Employee added',
+        createdDescription:
+          'New employee has been saved successfully.',
+        updatedTitle: 'Employee updated',
+        updatedDescription:
+          'Employee information has been updated successfully.',
+        deletedTitle: 'Employee deleted',
+        deletedDescription:
+          'Employee has been deleted successfully.',
+        mustBeCompanyAdminTitle: 'Error',
+        mustBeCompanyAdminDescription:
+          'Please log in as a company admin first.',
+      },
+      confirmDelete: 'Do you want to delete “{name}”?',
+      empty: 'No employees found',
     },
+  
     expensesPage: {
       title: 'Expenses',
-      subtitle: 'Track all consumables and operational costs',
-      searchPlaceholder: 'Search by product or notes...',
+      subtitle:
+        'Track all consumables and operational costs',
+      searchPlaceholder:
+        'Search by product or notes...',
       statTotal: 'Total Expenses',
       statMonth: 'This Month',
       newExpenseButton: 'Add Expense',
@@ -108,8 +174,10 @@ export const en = {
         quantity: 'Quantity',
         amount: 'Amount',
         notes: 'Notes',
+        actions: 'Actions',
       },
     },
+  
     reportsPage: {
       title: 'Reports',
       subtitle: 'Financial and operational overview',

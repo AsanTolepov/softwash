@@ -41,7 +41,10 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { formatCurrencyUZS } from '@/lib/utils';
+import {
+  formatCurrencyUZS,
+  transliterateToRussian,
+} from '@/lib/utils';
 import type { Employee as EmployeeType } from '@/types';
 
 type EmployeeFilter = 'ALL' | 'ACTIVE' | 'INACTIVE';
@@ -101,6 +104,19 @@ export default function Employees() {
     return matchesSearch && matchesStatus;
   });
 
+  const getShiftLabel = (shift: string): string => {
+    switch (shift) {
+      case 'Ertalab':
+        return t('employeesPage.form.shiftMorning');
+      case 'Tushlikdan keyin':
+        return t('employeesPage.form.shiftAfternoon');
+      case 'Kechki':
+        return t('employeesPage.form.shiftEvening');
+      default:
+        return shift;
+    }
+  };
+
   // Yangi xodim qo'shish – ro'lni Groq orqali 3 tilda saqlash
   const handleAddEmployee = async (
     e: React.FormEvent<HTMLFormElement>,
@@ -109,14 +125,15 @@ export default function Employees() {
     if (!companyId) {
       toast({
         variant: 'destructive',
-        title: 'Xatolik',
-        description:
-          'Avval kompaniya admini sifatida tizimga kiring.',
+        title: t('employeesPage.toasts.mustBeCompanyAdminTitle'),
+        description: t(
+          'employeesPage.toasts.mustBeCompanyAdminDescription',
+        ),
       });
       return;
     }
 
-    const roleUz = form.role.trim() || 'Xodim';
+    const roleUz = form.role.trim() || t('employeesPage.defaultRole');
 
     let roleRu: string | undefined;
     let roleEn: string | undefined;
@@ -148,8 +165,8 @@ export default function Employees() {
     });
 
     toast({
-      title: 'Xodim qo‘shildi',
-      description: 'Yangi xodim muvaffaqiyatli saqlandi.',
+      title: t('employeesPage.toasts.createdTitle'),
+      description: t('employeesPage.toasts.createdDescription'),
     });
 
     setForm({
@@ -200,8 +217,8 @@ export default function Employees() {
     });
 
     toast({
-      title: 'Xodim yangilandi',
-      description: 'Xodim ma’lumotlari muvaffaqiyatli yangilandi.',
+      title: t('employeesPage.toasts.updatedTitle'),
+      description: t('employeesPage.toasts.updatedDescription'),
     });
 
     setEditOpen(false);
@@ -210,15 +227,27 @@ export default function Employees() {
 
   const handleDeleteEmployee = async (emp: EmployeeType) => {
     const ok = window.confirm(
-      `"${emp.firstName} ${emp.lastName}" xodimini o‘chirmoqchimisiz?`,
+      t('employeesPage.confirmDelete').replace(
+        '{name}',
+        `${emp.firstName} ${emp.lastName}`,
+      ),
     );
     if (!ok) return;
 
     await deleteEmployee(emp.id);
     toast({
-      title: 'Xodim o‘chirildi',
-      description: 'Xodim muvaffaqiyatli o‘chirildi.',
+      title: t('employeesPage.toasts.deletedTitle'),
+      description: t('employeesPage.toasts.deletedDescription'),
     });
+  };
+
+  const formatNameForLang = (first: string, last: string) => {
+    const full = `${first} ${last}`.trim();
+    if (!full) return full;
+    if (lang === 'ru') {
+      return transliterateToRussian(full);
+    }
+    return full;
   };
 
   return (
@@ -239,17 +268,24 @@ export default function Employees() {
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Xodim qo‘shish
+              {t('employeesPage.addButton')}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Yangi xodim qo‘shish</DialogTitle>
+              <DialogTitle>
+                {t('employeesPage.dialog.addTitle')}
+              </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleAddEmployee} className="space-y-4">
+            <form
+              onSubmit={handleAddEmployee}
+              className="space-y-4"
+            >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Ismi</Label>
+                  <Label>
+                    {t('employeesPage.form.firstName')}
+                  </Label>
                   <Input
                     value={form.firstName}
                     onChange={(e) =>
@@ -262,7 +298,9 @@ export default function Employees() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Familiyasi</Label>
+                  <Label>
+                    {t('employeesPage.form.lastName')}
+                  </Label>
                   <Input
                     value={form.lastName}
                     onChange={(e) =>
@@ -276,9 +314,11 @@ export default function Employees() {
               </div>
 
               <div className="space-y-2">
-                <Label>Lavozimi</Label>
+                <Label>{t('employeesPage.form.role')}</Label>
                 <Input
-                  placeholder="Yuvuvchi, kuryer, menejer..."
+                  placeholder={t(
+                    'employeesPage.form.rolePlaceholder',
+                  )}
                   value={form.role}
                   onChange={(e) =>
                     setForm({ ...form, role: e.target.value })
@@ -287,7 +327,7 @@ export default function Employees() {
               </div>
 
               <div className="space-y-2">
-                <Label>Telefon</Label>
+                <Label>{t('employeesPage.form.phone')}</Label>
                 <Input
                   type="tel"
                   placeholder="+998 (90) 123-45-67"
@@ -301,7 +341,7 @@ export default function Employees() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Smena</Label>
+                  <Label>{t('employeesPage.form.shift')}</Label>
                   <select
                     className="border-input bg-background rounded-md px-3 py-2 text-sm"
                     value={form.shift}
@@ -309,15 +349,21 @@ export default function Employees() {
                       setForm({ ...form, shift: e.target.value })
                     }
                   >
-                    <option value="Ertalab">Ertalab</option>
-                    <option value="Tushlikdan keyin">
-                      Tushlikdan keyin
+                    <option value="Ertalab">
+                      {t('employeesPage.form.shiftMorning')}
                     </option>
-                    <option value="Kechki">Kechki</option>
+                    <option value="Tushlikdan keyin">
+                      {t('employeesPage.form.shiftAfternoon')}
+                    </option>
+                    <option value="Kechki">
+                      {t('employeesPage.form.shiftEvening')}
+                    </option>
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Kundalik ish haqi (so‘m)</Label>
+                  <Label>
+                    {t('employeesPage.form.dailyRate')}
+                  </Label>
                   <Input
                     type="number"
                     min={0}
@@ -328,13 +374,15 @@ export default function Employees() {
                         dailyRate: e.target.value,
                       })
                     }
-                    placeholder="50000"
+                    placeholder={t(
+                      'employeesPage.form.dailyRatePlaceholder',
+                    )}
                   />
                 </div>
               </div>
 
               <Button type="submit" className="w-full">
-                Saqlash
+                {t('employeesPage.dialog.save')}
               </Button>
             </form>
           </DialogContent>
@@ -414,10 +462,14 @@ export default function Employees() {
                     </div>
                     <div>
                       <div className="font-medium">
-                        {emp.firstName} {emp.lastName}
+                        {formatNameForLang(
+                          emp.firstName,
+                          emp.lastName,
+                        )}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Ishga olingan: {emp.hiredAt}
+                        {t('employeesPage.hiredAtLabel')}:{' '}
+                        {emp.hiredAt}
                       </div>
                     </div>
                   </TableCell>
@@ -425,7 +477,7 @@ export default function Employees() {
                     {getLocalizedText(emp.role, lang)}
                   </TableCell>
                   <TableCell>{emp.phone}</TableCell>
-                  <TableCell>{emp.shift}</TableCell>
+                  <TableCell>{getShiftLabel(emp.shift)}</TableCell>
                   <TableCell>
                     {formatCurrencyUZS(emp.dailyRate)}
                   </TableCell>
@@ -437,7 +489,9 @@ export default function Employees() {
                         }
                         className="text-xs"
                       >
-                        {emp.isActive ? 'Faol' : 'Nofaol'}
+                        {emp.isActive
+                          ? t('employeesPage.badge.active')
+                          : t('employeesPage.badge.inactive')}
                       </Badge>
                       <Switch
                         checked={emp.isActive}
@@ -461,7 +515,9 @@ export default function Employees() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDeleteEmployee(emp)}
+                        onClick={() =>
+                          handleDeleteEmployee(emp)
+                        }
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -476,7 +532,7 @@ export default function Employees() {
                     colSpan={7}
                     className="text-center text-muted-foreground py-8"
                   >
-                    Xodimlar topilmadi
+                    {t('employeesPage.empty')}
                   </TableCell>
                 </TableRow>
               )}
@@ -489,7 +545,9 @@ export default function Employees() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Xodim ma’lumotlarini tahrirlash</DialogTitle>
+            <DialogTitle>
+              {t('employeesPage.dialog.editTitle')}
+            </DialogTitle>
           </DialogHeader>
           <form
             onSubmit={handleEditEmployee}
@@ -497,7 +555,9 @@ export default function Employees() {
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Ismi</Label>
+                <Label>
+                  {t('employeesPage.form.firstName')}
+                </Label>
                 <Input
                   value={editForm.firstName}
                   onChange={(e) =>
@@ -510,7 +570,9 @@ export default function Employees() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Familiyasi</Label>
+                <Label>
+                  {t('employeesPage.form.lastName')}
+                </Label>
                 <Input
                   value={editForm.lastName}
                   onChange={(e) =>
@@ -524,7 +586,7 @@ export default function Employees() {
             </div>
 
             <div className="space-y-2">
-              <Label>Lavozimi</Label>
+              <Label>{t('employeesPage.form.role')}</Label>
               <Input
                 value={editForm.role}
                 onChange={(e) =>
@@ -537,7 +599,7 @@ export default function Employees() {
             </div>
 
             <div className="space-y-2">
-              <Label>Telefon</Label>
+              <Label>{t('employeesPage.form.phone')}</Label>
               <Input
                 type="tel"
                 value={editForm.phone}
@@ -553,7 +615,7 @@ export default function Employees() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Smena</Label>
+                <Label>{t('employeesPage.form.shift')}</Label>
                 <select
                   className="border-input bg-background rounded-md px-3 py-2 text-sm"
                   value={editForm.shift}
@@ -564,15 +626,21 @@ export default function Employees() {
                     })
                   }
                 >
-                  <option value="Ertalab">Ertalab</option>
-                  <option value="Tushlikdan keyin">
-                    Tushlikdan keyin
+                  <option value="Ertalab">
+                    {t('employeesPage.form.shiftMorning')}
                   </option>
-                  <option value="Kechki">Kechki</option>
+                  <option value="Tushlikdan keyin">
+                    {t('employeesPage.form.shiftAfternoon')}
+                  </option>
+                  <option value="Kechki">
+                    {t('employeesPage.form.shiftEvening')}
+                  </option>
                 </select>
               </div>
               <div className="space-y-2">
-                <Label>Kundalik ish haqi (so‘m)</Label>
+                <Label>
+                  {t('employeesPage.form.dailyRate')}
+                </Label>
                 <Input
                   type="number"
                   min={0}
@@ -588,7 +656,7 @@ export default function Employees() {
             </div>
 
             <Button type="submit" className="w-full">
-              O‘zgarishlarni saqlash
+              {t('employeesPage.dialog.saveChanges')}
             </Button>
           </form>
         </DialogContent>

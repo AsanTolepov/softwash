@@ -152,7 +152,29 @@ export function AdminLayout() {
         {/* Navigation */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = (() => {
+              // Superadmin menyusi: hozircha faqat bitta sahifa
+              if (item.path === '/superadmin') {
+                return location.pathname.startsWith('/superadmin');
+              }
+
+              // Admin dashboard faqat aniq /admin bo'lganda
+              if (item.path === '/admin') {
+                return location.pathname === '/admin';
+              }
+
+              // Orders: ham ro'yxat, ham /admin/order/:id sahifalarini qamrab olamiz
+              if (item.path === '/admin/orders') {
+                return (
+                  location.pathname === '/admin/orders' ||
+                  location.pathname.startsWith('/admin/order/')
+                );
+              }
+
+              // Qolganlari uchun prefix bo'yicha tekshiruv
+              return location.pathname.startsWith(item.path);
+            })();
+
             return (
               <button
                 key={item.path}
@@ -201,7 +223,10 @@ export function AdminLayout() {
           {/* USER DROPDOWN */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                className="flex items-center gap-2"
+              >
                 <Avatar className="h-8 w-8">
                   {/* Agar adminning profili uchun rasm bo'lsa – shu ko‘rsatiladi */}
                   {user?.type === 'admin' && avatarUrl && (

@@ -1,5 +1,11 @@
+// src/pages/admin/Dashboard.tsx
 import { useMemo } from 'react';
-import { ShoppingBag, Clock, CheckCircle, DollarSign } from 'lucide-react';
+import {
+  ShoppingBag,
+  Clock,
+  CheckCircle,
+  DollarSign,
+} from 'lucide-react';
 import { format, subDays, isAfter } from 'date-fns';
 import { useApp } from '@/contexts/AppContext';
 import { useI18n } from '@/lib/i18n';
@@ -22,7 +28,7 @@ import {
 import { formatCurrencyUZS } from '@/lib/utils';
 
 export default function AdminDashboard() {
-  const { user, getOrdersByCompany } = useApp();
+  const { user, getOrdersByCompany, settings } = useApp();
   const { t } = useI18n();
   const orders = getOrdersByCompany(user?.companyId || '');
 
@@ -33,9 +39,15 @@ export default function AdminDashboard() {
     );
 
     return {
-      newOrders: recentOrders.filter((o) => o.status === 'NEW').length,
-      washing: recentOrders.filter((o) => o.status === 'WASHING').length,
-      ready: recentOrders.filter((o) => o.status === 'READY').length,
+      newOrders: recentOrders.filter(
+        (o) => o.status === 'NEW',
+      ).length,
+      washing: recentOrders.filter(
+        (o) => o.status === 'WASHING',
+      ).length,
+      ready: recentOrders.filter(
+        (o) => o.status === 'READY',
+      ).length,
       revenue: recentOrders.reduce(
         (sum, o) => sum + o.payment.total,
         0,
@@ -50,7 +62,8 @@ export default function AdminDashboard() {
       const dateStr = format(date, 'yyyy-MM-dd');
       const dayOrders = orders.filter(
         (o) =>
-          format(new Date(o.createdAt), 'yyyy-MM-dd') === dateStr,
+          format(new Date(o.createdAt), 'yyyy-MM-dd') ===
+          dateStr,
       );
       data.push({
         date: format(date, 'MMM dd'),
@@ -64,6 +77,19 @@ export default function AdminDashboard() {
     return data;
   }, [orders]);
 
+  // Dashboard mavzusiga qarab layout klasslari
+  const statsGridClass =
+    settings.dashboardTheme === 'compact'
+      ? 'grid grid-cols-2 md:grid-cols-4 gap-3'
+      : settings.dashboardTheme === 'cards'
+      ? 'grid grid-cols-1 md:grid-cols-2 gap-4'
+      : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4';
+
+  const chartCardClass =
+    settings.dashboardTheme === 'cards'
+      ? 'border-2 border-primary/10 shadow-sm'
+      : '';
+
   return (
     <div className="space-y-6">
       <div>
@@ -75,7 +101,7 @@ export default function AdminDashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={statsGridClass}>
         <StatCard
           title={t('dashboardPage.stats.newOrders')}
           value={stats.newOrders}
@@ -102,13 +128,18 @@ export default function AdminDashboard() {
         />
       </div>
 
-      <Card>
+      <Card className={chartCardClass}>
         <CardHeader>
-          <CardTitle>{t('dashboardPage.chartTitle')}</CardTitle>
+          <CardTitle>
+            {t('dashboardPage.chartTitle')}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+            >
               <LineChart data={chartData}>
                 <CartesianGrid
                   strokeDasharray="3 3"
@@ -118,19 +149,23 @@ export default function AdminDashboard() {
                   dataKey="date"
                   className="text-xs"
                   tick={{
-                    fill: 'hsl(var(--muted-foreground))',
+                    fill:
+                      'hsl(var(--muted-foreground))',
                   }}
                 />
                 <YAxis
                   className="text-xs"
                   tick={{
-                    fill: 'hsl(var(--muted-foreground))',
+                    fill:
+                      'hsl(var(--muted-foreground))',
                   }}
                 />
                 <Tooltip
                   contentStyle={{
-                    background: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
+                    background:
+                      'hsl(var(--card))',
+                    border:
+                      '1px solid hsl(var(--border))',
                   }}
                   formatter={(value: any) => [
                     formatCurrencyUZS(Number(value)),

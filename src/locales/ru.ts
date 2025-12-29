@@ -19,22 +19,40 @@ export const ru = {
       superadminName: 'Суперадмин',
       adminName: 'Админ',
     },
+  
     settingsPage: {
       title: 'Настройки',
-      subtitle: 'Выберите язык системы, валюту и внешний вид',
+      subtitle:
+        'Выберите язык системы, валюту и внешний вид',
       generalTitle: 'Общие',
-      generalDescription: 'Основной язык и валюту системы',
+      generalDescription:
+        'Основной язык и валюту системы',
       languageLabel: 'Язык',
       currencyLabel: 'Валюта',
-      appearanceTitle: 'Внешний вид и цели',
+  
+      appearanceTitle: 'Внешний вид и темы',
       appearanceDescription:
-        'Режим дня/ночи и ежедневная цель по выручке',
+        'Режим дня/ночи и оформление панели управления',
       themeLabel: 'Тема',
       lightTheme: 'Светлая',
       darkTheme: 'Тёмная',
-      targetLabel: 'Цель выручки на день (сум)',
+      selectedLabel: 'Выбрано',
+  
+      dashboardThemeLabel: 'Тема панели управления',
+      dashboardThemeClassic: 'Классическая',
+      dashboardThemeCompact: 'Компактная',
+      dashboardThemeCards: 'Карточная',
+      dashboardThemeHint:
+        'Этот параметр влияет только на внешний вид панели управления (Dashboard).',
+  
       saveButton: 'Сохранить изменения',
+      toasts: {
+        savedTitle: 'Настройки сохранены',
+        savedDescription:
+          'Выбранные параметры успешно обновлены.',
+      },
     },
+  
     dashboardPage: {
       title: 'Панель управления',
       subtitle: 'Краткая статистика по вашему бизнесу',
@@ -46,6 +64,7 @@ export const ru = {
       },
       chartTitle: 'Дневная выручка за последние 30 дней',
     },
+  
     ordersPage: {
       title: 'Заказы',
       subtitle: 'Управляйте заказами клиентов',
@@ -68,6 +87,7 @@ export const ru = {
         actions: '',
       },
     },
+  
     employeesPage: {
       title: 'Сотрудники',
       subtitle: 'Управляйте сотрудниками и их статусом',
@@ -84,8 +104,50 @@ export const ru = {
         shift: 'Смена',
         dailyRate: 'Дневная ставка',
         active: 'Активность',
+        actions: 'Действия',
       },
+      addButton: 'Добавить сотрудника',
+      dialog: {
+        addTitle: 'Добавить сотрудника',
+        editTitle: 'Редактировать данные сотрудника',
+        save: 'Сохранить',
+        saveChanges: 'Сохранить изменения',
+      },
+      form: {
+        firstName: 'Имя',
+        lastName: 'Фамилия',
+        role: 'Должность',
+        rolePlaceholder: 'Мойщик, курьер, менеджер...',
+        phone: 'Телефон',
+        shift: 'Смена',
+        shiftMorning: 'Утро',
+        shiftAfternoon: 'После обеда',
+        shiftEvening: 'Вечер',
+        dailyRate: 'Дневная ставка (сум)',
+        dailyRatePlaceholder: '50000',
+      },
+      defaultRole: 'Сотрудник',
+      hiredAtLabel: 'Принят на работу',
+      badge: {
+        active: 'Активен',
+        inactive: 'Неактивен',
+      },
+      toasts: {
+        createdTitle: 'Сотрудник добавлен',
+        createdDescription: 'Новый сотрудник успешно сохранён.',
+        updatedTitle: 'Сотрудник обновлён',
+        updatedDescription:
+          'Данные сотрудника успешно обновлены.',
+        deletedTitle: 'Сотрудник удалён',
+        deletedDescription: 'Сотрудник успешно удалён.',
+        mustBeCompanyAdminTitle: 'Ошибка',
+        mustBeCompanyAdminDescription:
+          'Сначала войдите в систему как администратор компании.',
+      },
+      confirmDelete: 'Удалить сотрудника «{name}»?',
+      empty: 'Сотрудники не найдены',
     },
+  
     expensesPage: {
       title: 'Расходы',
       subtitle: 'Отслеживайте затраты и закупки',
@@ -108,8 +170,10 @@ export const ru = {
         quantity: 'Кол-во',
         amount: 'Сумма',
         notes: 'Примечание',
+        actions: 'Действия',
       },
     },
+  
     reportsPage: {
       title: 'Отчёты',
       subtitle: 'Финансовые и операционные показатели',

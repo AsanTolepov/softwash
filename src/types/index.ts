@@ -39,7 +39,7 @@ export interface Customer {
 
 export interface OrderDetails {
   itemCount: number;
-  serviceType: string; // hozircha oddiy string, keyin enum + i18n qilsa bo'ladi
+  serviceType: string;
   notes?: string;
   pickupDate?: string;
   dateIn: string;
@@ -67,7 +67,7 @@ export interface Employee {
   companyId: string;
   firstName: string;
   lastName: string;
-  role: LocalizedString; // oldingi string edi
+  role: LocalizedString;
   phone: string;
   shift: string;
   isActive: boolean;
@@ -81,11 +81,11 @@ export interface Expense {
   id: string;
   companyId: string;
   date: string;
-  product: LocalizedString; // oldingi: string
+  product: LocalizedString;
   quantity: number;
   unit: string;
   amount: number;
-  notes?: LocalizedString; // oldingi: string | undefined
+  notes?: LocalizedString;
 }
 
 export interface User {
@@ -95,9 +95,11 @@ export interface User {
   username?: string; // login
 }
 
+export type DashboardTheme = 'classic' | 'compact' | 'cards';
+
 export interface Settings {
   language: string; // 'uz' | 'ru' | 'en'
   currency: string;
   theme: 'light' | 'dark';
-  dailyRevenueTarget: number;
+  dashboardTheme: DashboardTheme;
 }

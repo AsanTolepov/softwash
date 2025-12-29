@@ -1,6 +1,12 @@
 // src/pages/admin/Settings.tsx
 import { useEffect, useState } from 'react';
-import { Moon, Sun, Globe2, DollarSign, Target } from 'lucide-react';
+import {
+  Moon,
+  Sun,
+  Globe2,
+  DollarSign,
+  LayoutDashboard,
+} from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
@@ -41,8 +47,8 @@ export default function Settings() {
     updateSettings(form);
 
     toast({
-      title: 'Sozlamalar saqlandi',
-      description: 'Tanlangan parametrlar muvaffaqiyatli yangilandi.',
+      title: t('settingsPage.toasts.savedTitle'),
+      description: t('settingsPage.toasts.savedDescription'),
     });
   };
 
@@ -62,7 +68,9 @@ export default function Settings() {
         {/* UMUMIY */}
         <Card>
           <CardHeader>
-            <CardTitle>{t('settingsPage.generalTitle')}</CardTitle>
+            <CardTitle>
+              {t('settingsPage.generalTitle')}
+            </CardTitle>
             <CardDescription>
               {t('settingsPage.generalDescription')}
             </CardDescription>
@@ -77,11 +85,18 @@ export default function Settings() {
               <Select
                 value={form.language}
                 onValueChange={(value) =>
-                  setForm((prev) => ({ ...prev, language: value }))
+                  setForm((prev) => ({
+                    ...prev,
+                    language: value,
+                  }))
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t('settingsPage.languageLabel')} />
+                  <SelectValue
+                    placeholder={t(
+                      'settingsPage.languageLabel',
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="uz">O‘zbekcha</SelectItem>
@@ -100,11 +115,18 @@ export default function Settings() {
               <Select
                 value={form.currency}
                 onValueChange={(value) =>
-                  setForm((prev) => ({ ...prev, currency: value }))
+                  setForm((prev) => ({
+                    ...prev,
+                    currency: value,
+                  }))
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t('settingsPage.currencyLabel')} />
+                  <SelectValue
+                    placeholder={t(
+                      'settingsPage.currencyLabel',
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="UZS">UZS (so‘m)</SelectItem>
@@ -116,16 +138,18 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* KO‘RINISH VA MAQSADLAR */}
+        {/* KO‘RINISH VA DASHBOARD MAVZUSI */}
         <Card>
           <CardHeader>
-            <CardTitle>{t('settingsPage.appearanceTitle')}</CardTitle>
+            <CardTitle>
+              {t('settingsPage.appearanceTitle')}
+            </CardTitle>
             <CardDescription>
               {t('settingsPage.appearanceDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {/* Tema */}
+            {/* Tema (light/dark) */}
             <div className="space-y-3">
               <Label className="flex items-center gap-2">
                 <Sun className="h-4 w-4 text-primary" />
@@ -137,7 +161,10 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() =>
-                    setForm((prev) => ({ ...prev, theme: 'light' }))
+                    setForm((prev) => ({
+                      ...prev,
+                      theme: 'light',
+                    }))
                   }
                   className={`w-full flex items-center justify-between rounded-md border px-3 py-2 text-sm ${
                     form.theme === 'light'
@@ -151,7 +178,7 @@ export default function Settings() {
                   </span>
                   {form.theme === 'light' && (
                     <span className="text-xs text-primary font-medium">
-                      Tanlangan
+                      {t('settingsPage.selectedLabel')}
                     </span>
                   )}
                 </button>
@@ -160,7 +187,10 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() =>
-                    setForm((prev) => ({ ...prev, theme: 'dark' }))
+                    setForm((prev) => ({
+                      ...prev,
+                      theme: 'dark',
+                    }))
                   }
                   className={`w-full flex items-center justify-between rounded-md border px-3 py-2 text-sm ${
                     form.theme === 'dark'
@@ -174,39 +204,108 @@ export default function Settings() {
                   </span>
                   {form.theme === 'dark' && (
                     <span className="text-xs text-primary font-medium">
-                      Tanlangan
+                      {t('settingsPage.selectedLabel')}
                     </span>
                   )}
                 </button>
               </div>
             </div>
 
-            {/* Kundalik daromad maqsadi */}
+            {/* Dashboard Mavzusi */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-primary" />
-                {t('settingsPage.targetLabel')}
+                <LayoutDashboard className="h-4 w-4 text-primary" />
+                {t('settingsPage.dashboardThemeLabel')}
               </Label>
-              <Input
-                type="number"
-                min={0}
-                value={form.dailyRevenueTarget}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    dailyRevenueTarget: Number(e.target.value) || 0,
-                  }))
-                }
-              />
+              <div className="space-y-2">
+                <div className="grid grid-cols-1 gap-2">
+                  {/* Classic */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        dashboardTheme: 'classic',
+                      }))
+                    }
+                    className={`w-full flex items-center justify-between rounded-md border px-3 py-2 text-sm ${
+                      form.dashboardTheme === 'classic'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border bg-background'
+                    }`}
+                  >
+                    <span>
+                      {t('settingsPage.dashboardThemeClassic')}
+                    </span>
+                    {form.dashboardTheme === 'classic' && (
+                      <span className="text-xs text-primary font-medium">
+                        {t('settingsPage.selectedLabel')}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Compact */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        dashboardTheme: 'compact',
+                      }))
+                    }
+                    className={`w-full flex items-center justify-between rounded-md border px-3 py-2 text-sm ${
+                      form.dashboardTheme === 'compact'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border bg-background'
+                    }`}
+                  >
+                    <span>
+                      {t('settingsPage.dashboardThemeCompact')}
+                    </span>
+                    {form.dashboardTheme === 'compact' && (
+                      <span className="text-xs text-primary font-medium">
+                        {t('settingsPage.selectedLabel')}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Cards */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        dashboardTheme: 'cards',
+                      }))
+                    }
+                    className={`w-full flex items-center justify-between rounded-md border px-3 py-2 text-sm ${
+                      form.dashboardTheme === 'cards'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border bg-background'
+                    }`}
+                  >
+                    <span>
+                      {t('settingsPage.dashboardThemeCards')}
+                    </span>
+                    {form.dashboardTheme === 'cards' && (
+                      <span className="text-xs text-primary font-medium">
+                        {t('settingsPage.selectedLabel')}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Hisobot va tahlil uchun foydalaniladi.
+                {t('settingsPage.dashboardThemeHint')}
               </p>
             </div>
           </CardContent>
         </Card>
 
         <div className="flex justify-end">
-          <Button type="submit">{t('settingsPage.saveButton')}</Button>
+          <Button type="submit">
+            {t('settingsPage.saveButton')}
+          </Button>
         </div>
       </form>
     </div>

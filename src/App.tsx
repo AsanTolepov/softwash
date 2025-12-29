@@ -1,3 +1,4 @@
+// src/App.tsx
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +8,7 @@ import { AppProvider } from "@/contexts/AppContext";
 
 import { AdminLayout } from "@/components/layouts/AdminLayout";
 import { CustomerLayout } from "@/components/layouts/CustomerLayout";
+import { RequireAuth } from "@/components/RequireAuth";
 
 import Login from "@/pages/Login";
 import NewOrder from "@/pages/customer/NewOrder";
@@ -42,8 +44,15 @@ const App = () => (
             {/* 2) Login sahifasi – faqat admin/superadmin uchun */}
             <Route path="/login" element={<Login />} />
 
-            {/* 3) Admin panel */}
-            <Route path="/admin" element={<AdminLayout />}>
+            {/* 3) Admin panel – faqat ADMIN */}
+            <Route
+              path="/admin"
+              element={
+                <RequireAuth allowedTypes={['admin']}>
+                  <AdminLayout />
+                </RequireAuth>
+              }
+            >
               <Route index element={<AdminDashboard />} />
               <Route path="orders" element={<Orders />} />
               <Route path="order/:id" element={<OrderDetail />} />
@@ -54,8 +63,15 @@ const App = () => (
               <Route path="profile" element={<Profile />} />
             </Route>
 
-            {/* 4) Superadmin panel */}
-            <Route path="/superadmin" element={<AdminLayout />}>
+            {/* 4) Superadmin panel – faqat SUPERADMIN */}
+            <Route
+              path="/superadmin"
+              element={
+                <RequireAuth allowedTypes={['superadmin']}>
+                  <AdminLayout />
+                </RequireAuth>
+              }
+            >
               <Route index element={<SuperadminDashboard />} />
             </Route>
 

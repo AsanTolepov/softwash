@@ -1,6 +1,13 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Calendar, Package, Phone, User, FileText, Send } from 'lucide-react';
+import {
+  Calendar,
+  Package,
+  Phone,
+  User,
+  FileText,
+  Send,
+} from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
@@ -17,7 +24,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 export default function NewOrder() {
-  const { companyId } = useParams();
+  const { companyId: companyIdParam } = useParams();
   const navigate = useNavigate();
   const { addOrder, companies } = useApp();
   const { toast } = useToast();
@@ -31,32 +38,54 @@ export default function NewOrder() {
     notes: '',
   });
 
-  const targetCompanyId = companyId || 'company-1';
-  const company = companies.find((c) => c.id === targetCompanyId);
+  // URL dagi companyId bo'lmasa, mavjud kompaniyalardan birinchisini olamiz
+  const effectiveCompanyId = useMemo(() => {
+    if (companyIdParam) return companyIdParam;
+    if (companies.length > 0) return companies[0].id;
+    return null;
+  }, [companyIdParam, companies]);
+
+  const company = useMemo(
+    () =>
+      effectiveCompanyId
+        ? companies.find((c) => c.id === effectiveCompanyId)
+        : undefined,
+    [effectiveCompanyId, companies],
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Faqat zarur maydonlarni tekshiramiz (xizmat turi endi kerak emas)
+    if (!effectiveCompanyId) {
+      toast({
+        variant: 'destructive',
+        title: 'Kompaniya topilmadi',
+        description:
+          'Buyurtma berish uchun tizim sozlamalaridan kamida bitta kompaniya yarating.',
+      });
+      return;
+    }
+
+    // Zarur maydonlar
     if (!formData.firstName || !formData.phone || !formData.itemCount) {
       toast({
         variant: 'destructive',
         title: 'Ma’lumotlar yetarli emas',
-        description: 'Iltimos, * bilan belgilangan maydonlarni to‘ldiring.',
+        description:
+          'Iltimos, * bilan belgilangan maydonlarni to‘ldiring.',
       });
       return;
     }
 
     const order = addOrder({
-      companyId: targetCompanyId,
+      companyId: effectiveCompanyId,
       customer: {
         firstName: formData.firstName,
         lastName: formData.lastName,
         phone: formData.phone,
       },
       details: {
-        itemCount: parseInt(formData.itemCount),
-        // Xizmat turi endi formadan emas, bitta umumiy qiymatdan olinadi
+        itemCount: parseInt(formData.itemCount, 10),
         serviceType: 'Kiyim yuvish',
         notes: formData.notes || undefined,
         pickupDate: formData.pickupDate,
@@ -76,7 +105,9 @@ export default function NewOrder() {
   return (
     <Card className="animate-fade-in">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Yangi kir yuvish buyurtmasi</CardTitle>
+        <CardTitle className="text-2xl">
+          Yangi kir yuvish buyurtmasi
+        </CardTitle>
         <CardDescription>
           {company
             ? `${company.name} xizmatiga xush kelibsiz. Quyidagi formani to‘ldirib buyurtma yuboring.`
@@ -100,7 +131,10 @@ export default function NewOrder() {
                   placeholder="Abbos"
                   value={formData.firstName}
                   onChange={(e) =>
-                    setFormData({ ...formData, firstName: e.target.value })
+                    setFormData({
+                      ...formData,
+                      firstName: e.target.value,
+                    })
                   }
                   required
                 />
@@ -112,7 +146,10 @@ export default function NewOrder() {
                   placeholder="Hamidov"
                   value={formData.lastName}
                   onChange={(e) =>
-                    setFormData({ ...formData, lastName: e.target.value })
+                    setFormData({
+                      ...formData,
+                      lastName: e.target.value,
+                    })
                   }
                 />
               </div>
@@ -129,7 +166,10 @@ export default function NewOrder() {
                 placeholder="+998 ** *** ** **"
                 value={formData.phone}
                 onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
+                  setFormData({
+                    ...formData,
+                    phone: e.target.value,
+                  })
                 }
                 required
               />
@@ -143,8 +183,6 @@ export default function NewOrder() {
               Xizmat tafsilotlari
             </h3>
 
-            {/* Xizmat turi maydoni olib tashlandi */}
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="itemCount">Buyumlar soni *</Label>
@@ -155,13 +193,19 @@ export default function NewOrder() {
                   placeholder="1"
                   value={formData.itemCount}
                   onChange={(e) =>
-                    setFormData({ ...formData, itemCount: e.target.value })
+                    setFormData({
+                      ...formData,
+                      itemCount: e.target.value,
+                    })
                   }
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="pickupDate" className="flex items-center gap-2">
+                <Label
+                  htmlFor="pickupDate"
+                  className="flex items-center gap-2"
+                >
                   <Calendar className="h-3 w-3" />
                   Kutilayotgan tayyor bo‘lish sanasi
                 </Label>
@@ -170,7 +214,10 @@ export default function NewOrder() {
                   type="date"
                   value={formData.pickupDate}
                   onChange={(e) =>
-                    setFormData({ ...formData, pickupDate: e.target.value })
+                    setFormData({
+                      ...formData,
+                      pickupDate: e.target.value,
+                    })
                   }
                   min={format(new Date(), 'yyyy-MM-dd')}
                 />
@@ -187,7 +234,10 @@ export default function NewOrder() {
                 placeholder="Masalan: nozik mato, haroratda yuvmang va joy..."
                 value={formData.notes}
                 onChange={(e) =>
-                  setFormData({ ...formData, notes: e.target.value })
+                  setFormData({
+                    ...formData,
+                    notes: e.target.value,
+                  })
                 }
                 rows={3}
               />

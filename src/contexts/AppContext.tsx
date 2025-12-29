@@ -65,7 +65,9 @@ interface AppContextType {
   updateSettings: (updates: Partial<Settings>) => void;
 }
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+const AppContext = createContext<AppContextType | undefined>(
+  undefined,
+);
 
 const generateOrderId = () =>
   `PC-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -75,8 +77,11 @@ const defaultSettings: Settings = {
   language: 'uz',
   currency: 'UZS',
   theme: 'light',
-  dailyRevenueTarget: 1_000_000,
+  dashboardTheme: 'classic',
 };
+
+// LocalStorage uchun kalit
+const USER_STORAGE_KEY = 'softwash_user';
 
 // Firestore uchun undefinedlarni olib tashlaymiz
 function cleanUndefined<T>(value: T): T {
@@ -123,7 +128,22 @@ function normalizeExpense(raw: any): Expense {
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  // USER – localStorage'dan o'qib boshlaymiz
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = window.localStorage.getItem(USER_STORAGE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw) as User;
+    } catch (error) {
+      console.error(
+        'Saqlangan user ma’lumotlarini o‘qishda xatolik:',
+        error,
+      );
+      return null;
+    }
+  });
+
   const [companies, setCompanies] = useState<Company[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -135,12 +155,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const loadData = async () => {
       try {
         // Kompaniyalar
-        const companiesSnap = await getDocs(collection(db, 'companies'));
+        const companiesSnap = await getDocs(
+          collection(db, 'companies'),
+        );
         if (companiesSnap.empty) {
           setCompanies(mockCompanies);
           await Promise.all(
             mockCompanies.map((c) =>
-              setDoc(doc(db, 'companies', c.id), cleanUndefined(c)),
+              setDoc(
+                doc(db, 'companies', c.id),
+                cleanUndefined(c),
+              ),
             ),
           );
         } else {
@@ -159,7 +184,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             ),
           );
         } else {
-          setOrders(ordersSnap.docs.map((d) => d.data() as Order));
+          setOrders(
+            ordersSnap.docs.map((d) => d.data() as Order),
+          );
         }
 
         // Xodimlar
@@ -185,7 +212,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Xarajatlar
-        const expensesSnap = await getDocs(collection(db, 'expenses'));
+        const expensesSnap = await getDocs(
+          collection(db, 'expenses'),
+        );
         if (expensesSnap.empty) {
           setExpenses(mockExpenses.map(normalizeExpense));
           await Promise.all(
@@ -208,9 +237,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const settingsRef = doc(db, 'meta', 'settings');
         const settingsSnap = await getDoc(settingsRef);
         if (settingsSnap.exists()) {
-          setSettings(settingsSnap.data() as Settings);
+          const remote = settingsSnap.data() as Partial<Settings>;
+          // Eski hujjatlar bilan mos bo‘lishi uchun default + remote
+          setSettings({ ...defaultSettings, ...remote });
         } else {
-          await setDoc(settingsRef, cleanUndefined(defaultSettings));
+          await setDoc(
+            settingsRef,
+            cleanUndefined(defaultSettings),
+          );
           setSettings(defaultSettings);
         }
       } catch (error) {
@@ -235,15 +269,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [settings.theme]);
 
-  // LOGIN / LOGOUT
+  // LOGIN / LOGOUT – localStorage bilan
 
   const login = useCallback(
     (username: string, password: string): boolean => {
-      if (username === 'superadmin' && password === 'superadmin') {
-        setUser({ type: 'superadmin', username: 'superadmin' });
+      // SUPERADMIN
+      if (
+        username === 'superadmin' &&
+        password === 'superadmin'
+      ) {
+        const newUser: User = {
+          type: 'superadmin',
+          username: 'superadmin',
+        };
+        setUser(newUser);
+
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(
+            USER_STORAGE_KEY,
+            JSON.stringify(newUser),
+          );
+        }
+
         return true;
       }
 
+      // KOMPANIYA ADMINI
       const company = companies.find((c) => {
         if (!c.isEnabled) return false;
 
@@ -260,12 +311,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (company) {
-        setUser({
+        const newUser: User = {
           type: 'admin',
           companyId: company.id,
           companyName: company.name,
           username,
-        });
+        };
+
+        setUser(newUser);
+
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(
+            USER_STORAGE_KEY,
+            JSON.stringify(newUser),
+          );
+        }
+
         return true;
       }
 
@@ -276,6 +337,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     setUser(null);
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(USER_STORAGE_KEY);
+    }
   }, []);
 
   // KOMPANIYALAR
@@ -304,6 +368,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         doc(db, 'companies', id),
         cleanUndefined(updates) as any,
       ).catch(console.error);
+
+      // Agar user shu kompaniya admini bo'lsa va nomi o'zgarsa – localStorage'ni ham yangilaymiz
+      setUser((prev) => {
+        if (prev?.type === 'admin' && prev.companyId === id) {
+          const updatedUser: User = {
+            ...prev,
+            companyName:
+              updates.name !== undefined
+                ? updates.name
+                : prev.companyName,
+          };
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem(
+              USER_STORAGE_KEY,
+              JSON.stringify(updatedUser),
+            );
+          }
+          return updatedUser;
+        }
+        return prev;
+      });
     },
     [],
   );
@@ -321,17 +406,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const employeesRef = collection(db, 'employees');
       const expensesRef = collection(db, 'expenses');
 
-      const [ordersSnap, employeesSnap, expensesSnap] = await Promise.all([
-        getDocs(query(ordersRef, where('companyId', '==', id))),
-        getDocs(query(employeesRef, where('companyId', '==', id))),
-        getDocs(query(expensesRef, where('companyId', '==', id))),
-      ]);
+      const [ordersSnap, employeesSnap, expensesSnap] =
+        await Promise.all([
+          getDocs(query(ordersRef, where('companyId', '==', id))),
+          getDocs(
+            query(employeesRef, where('companyId', '==', id)),
+          ),
+          getDocs(
+            query(expensesRef, where('companyId', '==', id)),
+          ),
+        ]);
 
       await Promise.all([
         ...ordersSnap.docs.map((d) => deleteDoc(d.ref)),
         ...employeesSnap.docs.map((d) => deleteDoc(d.ref)),
         ...expensesSnap.docs.map((d) => deleteDoc(d.ref)),
       ]);
+
+      // Agar shu kompaniya admini login bo'lgan bo'lsa, logout qilamiz
+      setUser((prev) => {
+        if (prev?.type === 'admin' && prev.companyId === id) {
+          if (typeof window !== 'undefined') {
+            window.localStorage.removeItem(USER_STORAGE_KEY);
+          }
+          return null;
+        }
+        return prev;
+      });
     } catch (error) {
       console.error('Kompaniyani o‘chirishda xatolik:', error);
     }
@@ -359,19 +460,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  const updateOrder = useCallback((id: string, updates: Partial<Order>) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, ...updates } : o)),
-    );
+  const updateOrder = useCallback(
+    (id: string, updates: Partial<Order>) => {
+      setOrders((prev) =>
+        prev.map((o) => (o.id === id ? { ...o, ...updates } : o)),
+      );
 
-    updateDoc(
-      doc(db, 'orders', id),
-      cleanUndefined(updates) as any,
-    ).catch(console.error);
-  }, []);
+      updateDoc(
+        doc(db, 'orders', id),
+        cleanUndefined(updates) as any,
+      ).catch(console.error);
+    },
+    [],
+  );
 
   const getOrdersByCompany = useCallback(
-    (companyId: string) => orders.filter((o) => o.companyId === companyId),
+    (companyId: string) =>
+      orders.filter((o) => o.companyId === companyId),
     [orders],
   );
 
@@ -442,7 +547,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateExpense = useCallback(
     (id: string, updates: Partial<Expense>) => {
-      setExpenses((prev) =>  
+      setExpenses((prev) =>
         prev.map((e) => (e.id === id ? { ...e, ...updates } : e)),
       );
 
@@ -471,17 +576,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // SOZLAMALAR
 
-  const updateSettings = useCallback((updates: Partial<Settings>) => {
-    setSettings((prev) => {
-      const merged = { ...prev, ...updates };
-      setDoc(
-        doc(db, 'meta', 'settings'),
-        cleanUndefined(merged),
-        { merge: true },
-      ).catch(console.error);
-      return merged;
-    });
-  }, []);
+  const updateSettings = useCallback(
+    (updates: Partial<Settings>) => {
+      setSettings((prev) => {
+        const merged = { ...prev, ...updates };
+        setDoc(
+          doc(db, 'meta', 'settings'),
+          cleanUndefined(merged),
+          { merge: true },
+        ).catch(console.error);
+        return merged;
+      });
+    },
+    [],
+  );
 
   return (
     <AppContext.Provider
@@ -519,7 +627,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 export function useApp() {
   const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error('useApp faqat AppProvider ichida ishlatilishi mumkin');
+    throw new Error(
+      'useApp faqat AppProvider ichida ishlatilishi mumkin',
+    );
   }
   return context;
 }
