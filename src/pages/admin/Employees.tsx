@@ -60,6 +60,22 @@ export default function Employees() {
   const { toast } = useToast();
   const { t, lang } = useI18n();
 
+  const isStaff = user?.type === 'staff';
+  const staffPermissions = isStaff ? user.permissions : undefined;
+
+  const canViewEmployees =
+    !isStaff || !!staffPermissions?.canViewEmployees;
+  const canManageEmployees =
+    !isStaff || !!staffPermissions?.canManageEmployees;
+
+  if (!canViewEmployees) {
+    return (
+      <div className="text-center text-muted-foreground py-16">
+        Sizda bu sahifani ko‘rish huquqi yo‘q.
+      </div>
+    );
+  }
+
   const companyId = user?.companyId || '';
   const employees = getEmployeesByCompany(companyId);
 
@@ -78,6 +94,8 @@ export default function Employees() {
     phone: '',
     shift: 'Ertalab',
     dailyRate: '',
+    login: '',
+    password: '',
   });
 
   const [editForm, setEditForm] = useState({
@@ -87,10 +105,13 @@ export default function Employees() {
     phone: '',
     shift: 'Ertalab',
     dailyRate: '',
+    login: '',
+    password: '',
   });
 
   const filteredEmployees = employees.filter((emp) => {
-    const fullName = `${emp.firstName} ${emp.lastName}`.toLowerCase();
+    const fullName =
+      `${emp.firstName} ${emp.lastName}`.toLowerCase();
     const matchesSearch =
       search === '' ||
       fullName.includes(search.toLowerCase()) ||
@@ -117,6 +138,15 @@ export default function Employees() {
     }
   };
 
+  const formatNameForLang = (first: string, last: string) => {
+    const full = `${first} ${last}`.trim();
+    if (!full) return full;
+    if (lang === 'ru') {
+      return transliterateToRussian(full);
+    }
+    return full;
+  };
+
   // Yangi xodim qo'shish – ro'lni Groq orqali 3 tilda saqlash
   const handleAddEmployee = async (
     e: React.FormEvent<HTMLFormElement>,
@@ -125,15 +155,23 @@ export default function Employees() {
     if (!companyId) {
       toast({
         variant: 'destructive',
-        title: t('employeesPage.toasts.mustBeCompanyAdminTitle'),
-        description: t(
-          'employeesPage.toasts.mustBeCompanyAdminDescription',
-        ),
+        title:
+          t(
+            'employeesPage.toasts.mustBeCompanyAdminTitle',
+          ) || 'Xatolik',
+        description:
+          t(
+            'employeesPage.toasts.mustBeCompanyAdminDescription',
+          ) ||
+          'Avval kompaniya admini sifatida tizimga kiring.',
       });
       return;
     }
 
-    const roleUz = form.role.trim() || t('employeesPage.defaultRole');
+    const roleUz =
+      form.role.trim() ||
+      t('employeesPage.defaultRole') ||
+      'Xodim';
 
     let roleRu: string | undefined;
     let roleEn: string | undefined;
@@ -162,11 +200,19 @@ export default function Employees() {
       isActive: true,
       hiredAt: format(new Date(), 'yyyy-MM-dd'),
       dailyRate: parseFloat(form.dailyRate) || 0,
+      login: form.login || undefined,
+      password: form.password || undefined,
+      // permissions bu yerda emas – Sozlamalar sahifasida boshqariladi
     });
 
     toast({
-      title: t('employeesPage.toasts.createdTitle'),
-      description: t('employeesPage.toasts.createdDescription'),
+      title:
+        t('employeesPage.toasts.createdTitle') ||
+        'Xodim qo‘shildi',
+      description:
+        t(
+          'employeesPage.toasts.createdDescription',
+        ) || 'Yangi xodim muvaffaqiyatli saqlandi.',
     });
 
     setForm({
@@ -176,6 +222,8 @@ export default function Employees() {
       phone: '',
       shift: 'Ertalab',
       dailyRate: '',
+      login: '',
+      password: '',
     });
     setOpen(false);
   };
@@ -193,6 +241,8 @@ export default function Employees() {
       phone: emp.phone,
       shift: emp.shift,
       dailyRate: String(emp.dailyRate),
+      login: emp.login || '',
+      password: emp.password || '',
     });
     setEditOpen(true);
   };
@@ -209,6 +259,8 @@ export default function Employees() {
       phone: editForm.phone,
       shift: editForm.shift,
       dailyRate: parseFloat(editForm.dailyRate) || 0,
+      login: editForm.login || undefined,
+      password: editForm.password || undefined,
       // Faqat uz ro'lini yangilaymiz, ru/en eski bo'lib qoladi
       role: {
         ...editingEmployee.role,
@@ -217,8 +269,13 @@ export default function Employees() {
     });
 
     toast({
-      title: t('employeesPage.toasts.updatedTitle'),
-      description: t('employeesPage.toasts.updatedDescription'),
+      title:
+        t('employeesPage.toasts.updatedTitle') ||
+        'Xodim yangilandi',
+      description:
+        t(
+          'employeesPage.toasts.updatedDescription',
+        ) || 'Xodim ma’lumotlari muvaffaqiyatli yangilandi.',
     });
 
     setEditOpen(false);
@@ -227,7 +284,9 @@ export default function Employees() {
 
   const handleDeleteEmployee = async (emp: EmployeeType) => {
     const ok = window.confirm(
-      t('employeesPage.confirmDelete').replace(
+      (t('employeesPage.confirmDelete') ||
+        '"{name}" xodimini o‘chirmoqchimisiz?'
+      ).replace(
         '{name}',
         `${emp.firstName} ${emp.lastName}`,
       ),
@@ -236,18 +295,14 @@ export default function Employees() {
 
     await deleteEmployee(emp.id);
     toast({
-      title: t('employeesPage.toasts.deletedTitle'),
-      description: t('employeesPage.toasts.deletedDescription'),
+      title:
+        t('employeesPage.toasts.deletedTitle') ||
+        'Xodim o‘chirildi',
+      description:
+        t(
+          'employeesPage.toasts.deletedDescription',
+        ) || 'Xodim muvaffaqiyatli o‘chirildi.',
     });
-  };
-
-  const formatNameForLang = (first: string, last: string) => {
-    const full = `${first} ${last}`.trim();
-    if (!full) return full;
-    if (lang === 'ru') {
-      return transliterateToRussian(full);
-    }
-    return full;
   };
 
   return (
@@ -264,129 +319,188 @@ export default function Employees() {
         </div>
 
         {/* Yangi xodim qo'shish */}
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              {t('employeesPage.addButton')}
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {t('employeesPage.dialog.addTitle')}
-              </DialogTitle>
-            </DialogHeader>
-            <form
-              onSubmit={handleAddEmployee}
-              className="space-y-4"
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {canManageEmployees && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                {t('employeesPage.addButton')}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {t('employeesPage.dialog.addTitle')}
+                </DialogTitle>
+              </DialogHeader>
+              <form
+                onSubmit={handleAddEmployee}
+                className="space-y-4"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>
+                      {t('employeesPage.form.firstName')}
+                    </Label>
+                    <Input
+                      value={form.firstName}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          firstName:
+                            e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>
+                      {t('employeesPage.form.lastName')}
+                    </Label>
+                    <Input
+                      value={form.lastName}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          lastName:
+                            e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label>
-                    {t('employeesPage.form.firstName')}
+                    {t('employeesPage.form.role')}
                   </Label>
                   <Input
-                    value={form.firstName}
+                    placeholder={t(
+                      'employeesPage.form.rolePlaceholder',
+                    )}
+                    value={form.role}
                     onChange={(e) =>
                       setForm({
                         ...form,
-                        firstName: e.target.value,
+                        role: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>
+                    {t('employeesPage.form.phone')}
+                  </Label>
+                  <Input
+                    type="tel"
+                    placeholder="+998 (90) 123-45-67"
+                    value={form.phone}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        phone: e.target.value,
                       })
                     }
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>
-                    {t('employeesPage.form.lastName')}
-                  </Label>
-                  <Input
-                    value={form.lastName}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        lastName: e.target.value,
-                      })
-                    }
-                  />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>
+                      {t('employeesPage.form.shift')}
+                    </Label>
+                    <select
+                      className="border-input bg-background rounded-md px-3 py-2 text-sm"
+                      value={form.shift}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          shift: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="Ertalab">
+                        {t(
+                          'employeesPage.form.shiftMorning',
+                        )}
+                      </option>
+                      <option value="Tushlikdan keyin">
+                        {t(
+                          'employeesPage.form.shiftAfternoon',
+                        )}
+                      </option>
+                      <option value="Kechki">
+                        {t(
+                          'employeesPage.form.shiftEvening',
+                        )}
+                      </option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>
+                      {t('employeesPage.form.dailyRate')}
+                    </Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={form.dailyRate}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          dailyRate:
+                            e.target.value,
+                        })
+                      }
+                      placeholder={t(
+                        'employeesPage.form.dailyRatePlaceholder',
+                      )}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label>{t('employeesPage.form.role')}</Label>
-                <Input
-                  placeholder={t(
-                    'employeesPage.form.rolePlaceholder',
-                  )}
-                  value={form.role}
-                  onChange={(e) =>
-                    setForm({ ...form, role: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t('employeesPage.form.phone')}</Label>
-                <Input
-                  type="tel"
-                  placeholder="+998 (90) 123-45-67"
-                  value={form.phone}
-                  onChange={(e) =>
-                    setForm({ ...form, phone: e.target.value })
-                  }
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{t('employeesPage.form.shift')}</Label>
-                  <select
-                    className="border-input bg-background rounded-md px-3 py-2 text-sm"
-                    value={form.shift}
-                    onChange={(e) =>
-                      setForm({ ...form, shift: e.target.value })
-                    }
-                  >
-                    <option value="Ertalab">
-                      {t('employeesPage.form.shiftMorning')}
-                    </option>
-                    <option value="Tushlikdan keyin">
-                      {t('employeesPage.form.shiftAfternoon')}
-                    </option>
-                    <option value="Kechki">
-                      {t('employeesPage.form.shiftEvening')}
-                    </option>
-                  </select>
+                {/* Login / Parol */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Login (ixtiyoriy)</Label>
+                    <Input
+                      value={form.login}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          login: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Parol (ixtiyoriy)</Label>
+                    <Input
+                      type="text"
+                      value={form.password}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          password:
+                            e.target.value,
+                        })
+                      }
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>
-                    {t('employeesPage.form.dailyRate')}
-                  </Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={form.dailyRate}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        dailyRate: e.target.value,
-                      })
-                    }
-                    placeholder={t(
-                      'employeesPage.form.dailyRatePlaceholder',
-                    )}
-                  />
-                </div>
-              </div>
 
-              <Button type="submit" className="w-full">
-                {t('employeesPage.dialog.save')}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+                <Button
+                  type="submit"
+                  className="w-full"
+                >
+                  {t('employeesPage.dialog.save')}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {/* Filter + jadval */}
@@ -468,8 +582,10 @@ export default function Employees() {
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {t('employeesPage.hiredAtLabel')}:{' '}
-                        {emp.hiredAt}
+                        {t(
+                          'employeesPage.hiredAtLabel',
+                        ) || 'Ishga olingan'}
+                        : {emp.hiredAt}
                       </div>
                     </div>
                   </TableCell>
@@ -477,7 +593,9 @@ export default function Employees() {
                     {getLocalizedText(emp.role, lang)}
                   </TableCell>
                   <TableCell>{emp.phone}</TableCell>
-                  <TableCell>{getShiftLabel(emp.shift)}</TableCell>
+                  <TableCell>
+                    {getShiftLabel(emp.shift)}
+                  </TableCell>
                   <TableCell>
                     {formatCurrencyUZS(emp.dailyRate)}
                   </TableCell>
@@ -485,42 +603,64 @@ export default function Employees() {
                     <div className="flex items-center justify-center gap-2">
                       <Badge
                         variant={
-                          emp.isActive ? 'default' : 'secondary'
+                          emp.isActive
+                            ? 'default'
+                            : 'secondary'
                         }
                         className="text-xs"
                       >
                         {emp.isActive
-                          ? t('employeesPage.badge.active')
-                          : t('employeesPage.badge.inactive')}
+                          ? t(
+                              'employeesPage.badge.active',
+                            ) || 'Faol'
+                          : t(
+                              'employeesPage.badge.inactive',
+                            ) || 'Nofaol'}
                       </Badge>
-                      <Switch
-                        checked={emp.isActive}
-                        onCheckedChange={(checked) =>
-                          updateEmployee(emp.id, {
-                            isActive: checked,
-                          })
-                        }
-                      />
+                      {canManageEmployees && (
+                        <Switch
+                          checked={emp.isActive}
+                          onCheckedChange={(
+                            checked,
+                          ) =>
+                            updateEmployee(
+                              emp.id,
+                              {
+                                isActive:
+                                  checked,
+                              },
+                            )
+                          }
+                        />
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEditDialog(emp)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() =>
-                          handleDeleteEmployee(emp)
-                        }
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {canManageEmployees && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              openEditDialog(emp)
+                            }
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              handleDeleteEmployee(
+                                emp,
+                              )
+                            }
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -532,7 +672,8 @@ export default function Employees() {
                     colSpan={7}
                     className="text-center text-muted-foreground py-8"
                   >
-                    {t('employeesPage.empty')}
+                    {t('employeesPage.empty') ||
+                      'Xodimlar topilmadi'}
                   </TableCell>
                 </TableRow>
               )}
@@ -542,125 +683,175 @@ export default function Employees() {
       </Card>
 
       {/* Tahrirlash dialogi */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {t('employeesPage.dialog.editTitle')}
-            </DialogTitle>
-          </DialogHeader>
-          <form
-            onSubmit={handleEditEmployee}
-            className="space-y-4"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {canManageEmployees && (
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {t('employeesPage.dialog.editTitle')}
+              </DialogTitle>
+            </DialogHeader>
+            <form
+              onSubmit={handleEditEmployee}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>
+                    {t('employeesPage.form.firstName')}
+                  </Label>
+                  <Input
+                    value={editForm.firstName}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        firstName:
+                          e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>
+                    {t('employeesPage.form.lastName')}
+                  </Label>
+                  <Input
+                    value={editForm.lastName}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        lastName:
+                          e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label>
-                  {t('employeesPage.form.firstName')}
+                  {t('employeesPage.form.role')}
                 </Label>
                 <Input
-                  value={editForm.firstName}
+                  value={editForm.role}
                   onChange={(e) =>
                     setEditForm({
                       ...editForm,
-                      firstName: e.target.value,
+                      role: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>
+                  {t('employeesPage.form.phone')}
+                </Label>
+                <Input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      phone: e.target.value,
                     })
                   }
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label>
-                  {t('employeesPage.form.lastName')}
-                </Label>
-                <Input
-                  value={editForm.lastName}
-                  onChange={(e) =>
-                    setEditForm({
-                      ...editForm,
-                      lastName: e.target.value,
-                    })
-                  }
-                />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>
+                    {t('employeesPage.form.shift')}
+                  </Label>
+                  <select
+                    className="border-input bg-background rounded-md px-3 py-2 text-sm"
+                    value={editForm.shift}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        shift: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="Ertalab">
+                      {t(
+                        'employeesPage.form.shiftMorning',
+                      )}
+                    </option>
+                    <option value="Tushlikdan keyin">
+                      {t(
+                        'employeesPage.form.shiftAfternoon',
+                      )}
+                    </option>
+                    <option value="Kechki">
+                      {t(
+                        'employeesPage.form.shiftEvening',
+                      )}
+                    </option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>
+                    {t('employeesPage.form.dailyRate')}
+                  </Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={editForm.dailyRate}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        dailyRate:
+                          e.target.value,
+                      })
+                    }
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label>{t('employeesPage.form.role')}</Label>
-              <Input
-                value={editForm.role}
-                onChange={(e) =>
-                  setEditForm({
-                    ...editForm,
-                    role: e.target.value,
-                  })
-                }
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t('employeesPage.form.phone')}</Label>
-              <Input
-                type="tel"
-                value={editForm.phone}
-                onChange={(e) =>
-                  setEditForm({
-                    ...editForm,
-                    phone: e.target.value,
-                  })
-                }
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{t('employeesPage.form.shift')}</Label>
-                <select
-                  className="border-input bg-background rounded-md px-3 py-2 text-sm"
-                  value={editForm.shift}
-                  onChange={(e) =>
-                    setEditForm({
-                      ...editForm,
-                      shift: e.target.value,
-                    })
-                  }
-                >
-                  <option value="Ertalab">
-                    {t('employeesPage.form.shiftMorning')}
-                  </option>
-                  <option value="Tushlikdan keyin">
-                    {t('employeesPage.form.shiftAfternoon')}
-                  </option>
-                  <option value="Kechki">
-                    {t('employeesPage.form.shiftEvening')}
-                  </option>
-                </select>
+              {/* Login / Parol */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Login</Label>
+                  <Input
+                    value={editForm.login}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        login: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Parol</Label>
+                  <Input
+                    type="text"
+                    value={editForm.password}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        password:
+                          e.target.value,
+                      })
+                    }
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>
-                  {t('employeesPage.form.dailyRate')}
-                </Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={editForm.dailyRate}
-                  onChange={(e) =>
-                    setEditForm({
-                      ...editForm,
-                      dailyRate: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
 
-            <Button type="submit" className="w-full">
-              {t('employeesPage.dialog.saveChanges')}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+              <Button
+                type="submit"
+                className="w-full"
+              >
+                {t('employeesPage.dialog.saveChanges')}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

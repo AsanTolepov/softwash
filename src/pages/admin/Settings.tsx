@@ -6,6 +6,7 @@ import {
   Globe2,
   DollarSign,
   LayoutDashboard,
+  ShieldCheck,
 } from 'lucide-react';
 
 import { useApp } from '@/contexts/AppContext';
@@ -13,7 +14,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Card,
@@ -29,9 +29,41 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import type { EmployeePermissions } from '@/types';
+
+const defaultPermissions: EmployeePermissions = {
+  canViewDashboard: false,
+
+  canViewOrders: false,
+  canManageOrders: false,
+
+  canViewEmployees: false,
+  canManageEmployees: false,
+
+  canViewExpenses: false,
+  canManageExpenses: false,
+
+  canViewReports: false,
+
+  canViewSettings: false,
+};
 
 export default function Settings() {
-  const { settings, updateSettings } = useApp();
+  const {
+    settings,
+    updateSettings,
+    user,
+    getEmployeesByCompany,
+    updateEmployee,
+  } = useApp();
   const { toast } = useToast();
   const { t } = useI18n();
 
@@ -52,8 +84,35 @@ export default function Settings() {
     });
   };
 
+  // Faqat kompaniya admini xodim ruxsatlarini boshqaradi
+  const isAdmin = user?.type === 'admin' && user.companyId;
+  const employees = isAdmin
+    ? getEmployeesByCompany(user!.companyId!)
+    : [];
+
+  const handlePermissionChange = (
+    employeeId: string,
+    key: keyof EmployeePermissions,
+    value: boolean,
+  ) => {
+    const emp = employees.find((e) => e.id === employeeId);
+    if (!emp) return;
+
+    const current: EmployeePermissions = {
+      ...defaultPermissions,
+      ...(emp.permissions || {}),
+    };
+
+    const updated: EmployeePermissions = {
+      ...current,
+      [key]: value,
+    };
+
+    updateEmployee(employeeId, { permissions: updated });
+  };
+
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-5xl">
       {/* Sarlavha */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">
@@ -129,7 +188,9 @@ export default function Settings() {
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="UZS">UZS (so‘m)</SelectItem>
+                  <SelectItem value="UZS">
+                    UZS (so‘m)
+                  </SelectItem>
                   <SelectItem value="USD">USD</SelectItem>
                   <SelectItem value="EUR">EUR</SelectItem>
                 </SelectContent>
@@ -235,9 +296,12 @@ export default function Settings() {
                     }`}
                   >
                     <span>
-                      {t('settingsPage.dashboardThemeClassic')}
+                      {t(
+                        'settingsPage.dashboardThemeClassic',
+                      )}
                     </span>
-                    {form.dashboardTheme === 'classic' && (
+                    {form.dashboardTheme ===
+                      'classic' && (
                       <span className="text-xs text-primary font-medium">
                         {t('settingsPage.selectedLabel')}
                       </span>
@@ -260,9 +324,12 @@ export default function Settings() {
                     }`}
                   >
                     <span>
-                      {t('settingsPage.dashboardThemeCompact')}
+                      {t(
+                        'settingsPage.dashboardThemeCompact',
+                      )}
                     </span>
-                    {form.dashboardTheme === 'compact' && (
+                    {form.dashboardTheme ===
+                      'compact' && (
                       <span className="text-xs text-primary font-medium">
                         {t('settingsPage.selectedLabel')}
                       </span>
@@ -285,7 +352,9 @@ export default function Settings() {
                     }`}
                   >
                     <span>
-                      {t('settingsPage.dashboardThemeCards')}
+                      {t(
+                        'settingsPage.dashboardThemeCards',
+                      )}
                     </span>
                     {form.dashboardTheme === 'cards' && (
                       <span className="text-xs text-primary font-medium">
@@ -299,6 +368,220 @@ export default function Settings() {
                 {t('settingsPage.dashboardThemeHint')}
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* XODIM RUXSATLARI */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              Xodim ruxsatlari
+            </CardTitle>
+            <CardDescription>
+              Qaysi xodim saytning qaysi bo‘limlarini ko‘rishi va
+              ayniqsa <b>buyurtmalarni boshqarishi</b> mumkinligini
+              shu yerdan belgilang.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!isAdmin && (
+              <p className="text-sm text-muted-foreground">
+                Xodim ruxsatlarini faqat kompaniya admini boshqarishi
+                mumkin.
+              </p>
+            )}
+
+            {isAdmin && employees.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Hozircha hech qanday xodim yo‘q. Avval “Xodimlar”
+                bo‘limida xodimlarni qo‘shing.
+              </p>
+            )}
+
+            {isAdmin && employees.length > 0 && (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Xodim</TableHead>
+                      <TableHead>
+                        Bo‘limlar (ko‘rish)
+                      </TableHead>
+                      <TableHead>
+                        Buyurtmalar bo‘yicha amallar
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employees.map((emp) => {
+                      const perms: EmployeePermissions = {
+                        ...defaultPermissions,
+                        ...(emp.permissions || {}),
+                      };
+
+                      return (
+                        <TableRow key={emp.id}>
+                          <TableCell className="whitespace-nowrap">
+                            <div className="font-medium">
+                              {emp.firstName}{' '}
+                              {emp.lastName}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {emp.role.uz ||
+                                emp.role.ru ||
+                                emp.role.en ||
+                                ''}
+                            </div>
+                          </TableCell>
+                          <TableCell className="min-w-[260px]">
+                            <div className="flex flex-wrap gap-3 text-xs">
+                              <label className="flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    perms.canViewDashboard
+                                  }
+                                  onChange={(e) =>
+                                    handlePermissionChange(
+                                      emp.id,
+                                      'canViewDashboard',
+                                      e.target.checked,
+                                    )
+                                  }
+                                />
+                                <span>
+                                  Dashboard
+                                </span>
+                              </label>
+
+                              <label className="flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    perms.canViewOrders
+                                  }
+                                  onChange={(e) =>
+                                    handlePermissionChange(
+                                      emp.id,
+                                      'canViewOrders',
+                                      e.target.checked,
+                                    )
+                                  }
+                                />
+                                <span>
+                                  Buyurtmalar
+                                </span>
+                              </label>
+
+                              <label className="flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    perms.canViewEmployees
+                                  }
+                                  onChange={(e) =>
+                                    handlePermissionChange(
+                                      emp.id,
+                                      'canViewEmployees',
+                                      e.target.checked,
+                                    )
+                                  }
+                                />
+                                <span>
+                                  Xodimlar
+                                </span>
+                              </label>
+
+                              <label className="flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    perms.canViewExpenses
+                                  }
+                                  onChange={(e) =>
+                                    handlePermissionChange(
+                                      emp.id,
+                                      'canViewExpenses',
+                                      e.target.checked,
+                                    )
+                                  }
+                                />
+                                <span>
+                                  Xarajatlar
+                                </span>
+                              </label>
+
+                              <label className="flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    perms.canViewReports
+                                  }
+                                  onChange={(e) =>
+                                    handlePermissionChange(
+                                      emp.id,
+                                      'canViewReports',
+                                      e.target.checked,
+                                    )
+                                  }
+                                />
+                                <span>
+                                  Hisobotlar
+                                </span>
+                              </label>
+
+                              <label className="flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    perms.canViewSettings
+                                  }
+                                  onChange={(e) =>
+                                    handlePermissionChange(
+                                      emp.id,
+                                      'canViewSettings',
+                                      e.target.checked,
+                                    )
+                                  }
+                                />
+                                <span>
+                                  Sozlamalar
+                                </span>
+                              </label>
+                            </div>
+                          </TableCell>
+                          <TableCell className="min-w-[220px]">
+                            <div className="flex flex-col gap-2 text-xs">
+                              <label className="flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    perms.canManageOrders
+                                  }
+                                  onChange={(e) =>
+                                    handlePermissionChange(
+                                      emp.id,
+                                      'canManageOrders',
+                                      e.target.checked,
+                                    )
+                                  }
+                                />
+                                <span>
+                                  Buyurtmalarni boshqarish
+                                  (status, to‘lov,
+                                  o‘chirish)
+                                </span>
+                              </label>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
 

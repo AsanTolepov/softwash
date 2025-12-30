@@ -2,7 +2,7 @@
 import { Navigate } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
 
-type UserType = 'admin' | 'superadmin';
+type UserType = 'admin' | 'superadmin' | 'staff';
 
 interface RequireAuthProps {
   children: JSX.Element;
@@ -10,11 +10,14 @@ interface RequireAuthProps {
 }
 
 /**
- * Admin / Superadmin sahifalarini himoyalash:
+ * Admin / Superadmin / Staff sahifalarini himoyalash:
  * - Agar user yo'q bo'lsa -> /login ga yuboradi
  * - Agar roli mos kelmasa -> / ga yuboradi
  */
-export function RequireAuth({ children, allowedTypes }: RequireAuthProps) {
+export function RequireAuth({
+  children,
+  allowedTypes,
+}: RequireAuthProps) {
   const { user } = useApp();
 
   if (!user) {

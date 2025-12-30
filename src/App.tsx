@@ -37,18 +37,24 @@ const App = () => (
             {/* 1) Mijozlar uchun forma – ROOT */}
             <Route path="/" element={<CustomerLayout />}>
               <Route index element={<NewOrder />} />
-              <Route path="c/:companyId/new-order" element={<NewOrder />} />
-              <Route path="confirmation/:id" element={<Confirmation />} />
+              <Route
+                path="c/:companyId/new-order"
+                element={<NewOrder />}
+              />
+              <Route
+                path="confirmation/:id"
+                element={<Confirmation />}
+              />
             </Route>
 
-            {/* 2) Login sahifasi – faqat admin/superadmin uchun */}
+            {/* 2) Login sahifasi – faqat admin/superadmin/staff uchun */}
             <Route path="/login" element={<Login />} />
 
-            {/* 3) Admin panel – faqat ADMIN */}
+            {/* 3) Admin + Staff panel */}
             <Route
               path="/admin"
               element={
-                <RequireAuth allowedTypes={['admin']}>
+                <RequireAuth allowedTypes={['admin', 'staff']}>
                   <AdminLayout />
                 </RequireAuth>
               }
@@ -63,7 +69,7 @@ const App = () => (
               <Route path="profile" element={<Profile />} />
             </Route>
 
-            {/* 4) Superadmin panel – faqat SUPERADMIN */}
+            {/* 4) Superadmin panel */}
             <Route
               path="/superadmin"
               element={

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+// src/components/layouts/AdminLayout.tsx
+import { useState, useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -30,6 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import type { EmployeePermissions } from '@/types';
 
 type MenuItem = {
   icon: React.ComponentType<{ className?: string }>;
@@ -84,28 +86,82 @@ export function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout, companies } = useApp();
+  const { user, logout, companies, employees } = useApp();
   const { t } = useI18n();
 
-  // Qaysi menyu: admin yoki superadmin
-  const menuItems =
-    user?.type === 'superadmin' ? superadminMenuItems : adminMenuItems;
+  const staffPermissions: EmployeePermissions | undefined =
+    user?.type === 'staff' ? user.permissions : undefined;
 
-  // Admin uchun kompaniya va avatar ma'lumotlari
-  const companyForAdmin =
-    user?.type === 'admin' && user.companyId
+  // Qaysi menyu: admin/superadmin/staff
+  const baseMenuItems =
+    user?.type === 'superadmin'
+      ? superadminMenuItems
+      : adminMenuItems;
+
+  // STAFF uchun bo‘limlarni ruxsat bo‘yicha filterlash
+  const menuItems =
+    user?.type === 'staff' && staffPermissions
+      ? baseMenuItems.filter((item) => {
+          switch (item.path) {
+            case '/admin':
+              return staffPermissions.canViewDashboard;
+            case '/admin/orders':
+              return staffPermissions.canViewOrders;
+            case '/admin/employees':
+              return staffPermissions.canViewEmployees;
+            case '/admin/expenses':
+              return staffPermissions.canViewExpenses;
+            case '/admin/reports':
+              return staffPermissions.canViewReports;
+            case '/admin/settings':
+              return staffPermissions.canViewSettings;
+            default:
+              return true;
+          }
+        })
+      : baseMenuItems;
+
+  // Admin yoki staff uchun kompaniya ma'lumotlari
+  const companyForUser =
+    (user?.type === 'admin' || user?.type === 'staff') &&
+    user.companyId
       ? companies.find((c) => c.id === user.companyId)
       : undefined;
 
-  const avatarUrl = companyForAdmin?.adminAvatar;
+  // Staff uchun xodim ma'lumotlari
+  const employeeForStaff = useMemo(
+    () =>
+      user?.type === 'staff' && user.employeeId
+        ? employees.find((e) => e.id === user.employeeId)
+        : undefined,
+    [user, employees],
+  );
 
-  // Fallback initsiallar (ism familiyadan, bo‘lmasa AD)
-  const initials =
-    companyForAdmin?.adminFirstName || companyForAdmin?.adminLastName
-      ? `${(companyForAdmin?.adminFirstName?.[0] || '').toUpperCase()}${(
-          companyForAdmin?.adminLastName?.[0] || ''
+  const avatarUrl =
+    companyForUser?.adminAvatar ?? undefined;
+
+  const adminInitials =
+    companyForUser?.adminFirstName ||
+    companyForUser?.adminLastName
+      ? `${(companyForUser?.adminFirstName?.[0] ||
+          ''
+        ).toUpperCase()}${(
+          companyForUser?.adminLastName?.[0] || ''
         ).toUpperCase() || ''}` || 'AD'
       : 'AD';
+
+  const staffInitials =
+    employeeForStaff?.firstName ||
+    employeeForStaff?.lastName
+      ? `${(employeeForStaff?.firstName?.[0] ||
+          ''
+        ).toUpperCase()}${(
+          employeeForStaff?.lastName?.[0] || ''
+        ).toUpperCase() || ''}` || 'ST'
+      : 'ST';
+
+  const initials =
+    user?.type === 'staff' ? staffInitials : adminInitials;
 
   const handleLogout = () => {
     logout();
@@ -153,26 +209,25 @@ export function AdminLayout() {
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
             const isActive = (() => {
-              // Superadmin menyusi: hozircha faqat bitta sahifa
               if (item.path === '/superadmin') {
-                return location.pathname.startsWith('/superadmin');
+                return location.pathname.startsWith(
+                  '/superadmin',
+                );
               }
-
-              // Admin dashboard faqat aniq /admin bo'lganda
               if (item.path === '/admin') {
                 return location.pathname === '/admin';
               }
-
-              // Orders: ham ro'yxat, ham /admin/order/:id sahifalarini qamrab olamiz
               if (item.path === '/admin/orders') {
                 return (
                   location.pathname === '/admin/orders' ||
-                  location.pathname.startsWith('/admin/order/')
+                  location.pathname.startsWith(
+                    '/admin/order/',
+                  )
                 );
               }
-
-              // Qolganlari uchun prefix bo'yicha tekshiruv
-              return location.pathname.startsWith(item.path);
+              return location.pathname.startsWith(
+                item.path,
+              );
             })();
 
             return (
@@ -228,30 +283,42 @@ export function AdminLayout() {
                 className="flex items-center gap-2"
               >
                 <Avatar className="h-8 w-8">
-                  {/* Agar adminning profili uchun rasm bo'lsa – shu ko‘rsatiladi */}
-                  {user?.type === 'admin' && avatarUrl && (
-                    <AvatarImage
-                      src={avatarUrl}
-                      alt="Profil rasmi"
-                    />
-                  )}
+                  {/* Admin profili uchun rasm bo'lsa – shu ko‘rsatiladi */}
+                  {user?.type === 'admin' &&
+                    avatarUrl && (
+                      <AvatarImage
+                        src={avatarUrl}
+                        alt="Profil rasmi"
+                      />
+                    )}
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    {user?.type === 'superadmin' ? 'SA' : initials}
+                    {user?.type === 'superadmin'
+                      ? 'SA'
+                      : initials}
                   </AvatarFallback>
                 </Avatar>
                 <span className="font-medium hidden sm:inline">
                   {user?.type === 'superadmin'
                     ? t('header.superadminName')
-                    : t('header.adminName')}
+                    : user?.type === 'admin'
+                    ? t('header.adminName')
+                    : `${employeeForStaff?.firstName ?? ''} ${
+                        employeeForStaff?.lastName ?? ''
+                      }`.trim() || 'Xodim'}
                 </span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent
+              align="end"
+              className="w-48"
+            >
               {/* PROFIL faqat ADMIN uchun */}
               {user?.type === 'admin' && (
                 <>
                   <DropdownMenuItem
-                    onClick={() => navigate('/admin/profile')}
+                    onClick={() =>
+                      navigate('/admin/profile')
+                    }
                   >
                     <UserIcon className="mr-2 h-4 w-4" />
                     Profil

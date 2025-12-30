@@ -47,6 +47,7 @@ interface AppContextType {
   orders: Order[];
   addOrder: (order: Omit<Order, 'id' | 'createdAt'>) => Order;
   updateOrder: (id: string, updates: Partial<Order>) => void;
+  deleteOrder: (id: string) => Promise<void>;
   getOrdersByCompany: (companyId: string) => Order[];
 
   employees: Employee[];
@@ -65,9 +66,7 @@ interface AppContextType {
   updateSettings: (updates: Partial<Settings>) => void;
 }
 
-const AppContext = createContext<AppContextType | undefined>(
-  undefined,
-);
+const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const generateOrderId = () =>
   `PC-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -102,9 +101,7 @@ function cleanUndefined<T>(value: T): T {
 }
 
 // Eski string ma'lumotlarni LocalizedString ko'rinishiga o'tkazish
-function normalizeLocalized(
-  value: any,
-): LocalizedString | undefined {
+function normalizeLocalized(value: any): LocalizedString | undefined {
   if (!value) return undefined;
   if (typeof value === 'string') {
     return { uz: value };
@@ -136,10 +133,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!raw) return null;
       return JSON.parse(raw) as User;
     } catch (error) {
-      console.error(
-        'Saqlangan user ma’lumotlarini o‘qishda xatolik:',
-        error,
-      );
+      console.error('Saqlangan user ma’lumotlarini o‘qishda xatolik:', error);
       return null;
     }
   });
@@ -155,23 +149,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const loadData = async () => {
       try {
         // Kompaniyalar
-        const companiesSnap = await getDocs(
-          collection(db, 'companies'),
-        );
+        const companiesSnap = await getDocs(collection(db, 'companies'));
         if (companiesSnap.empty) {
           setCompanies(mockCompanies);
           await Promise.all(
             mockCompanies.map((c) =>
-              setDoc(
-                doc(db, 'companies', c.id),
-                cleanUndefined(c),
-              ),
+              setDoc(doc(db, 'companies', c.id), cleanUndefined(c)),
             ),
           );
         } else {
-          setCompanies(
-            companiesSnap.docs.map((d) => d.data() as Company),
-          );
+          setCompanies(companiesSnap.docs.map((d) => d.data() as Company));
         }
 
         // Buyurtmalar
@@ -184,52 +171,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             ),
           );
         } else {
-          setOrders(
-            ordersSnap.docs.map((d) => d.data() as Order),
-          );
+          setOrders(ordersSnap.docs.map((d) => d.data() as Order));
         }
 
         // Xodimlar
-        const employeesSnap = await getDocs(
-          collection(db, 'employees'),
-        );
+        const employeesSnap = await getDocs(collection(db, 'employees'));
         if (employeesSnap.empty) {
           setEmployees(mockEmployees.map(normalizeEmployee));
           await Promise.all(
             mockEmployees.map((e) =>
-              setDoc(
-                doc(db, 'employees', e.id),
-                cleanUndefined(e),
-              ),
+              setDoc(doc(db, 'employees', e.id), cleanUndefined(e)),
             ),
           );
         } else {
           setEmployees(
-            employeesSnap.docs.map((d) =>
-              normalizeEmployee(d.data()),
-            ),
+            employeesSnap.docs.map((d) => normalizeEmployee(d.data())),
           );
         }
 
         // Xarajatlar
-        const expensesSnap = await getDocs(
-          collection(db, 'expenses'),
-        );
+        const expensesSnap = await getDocs(collection(db, 'expenses'));
         if (expensesSnap.empty) {
           setExpenses(mockExpenses.map(normalizeExpense));
           await Promise.all(
             mockExpenses.map((e) =>
-              setDoc(
-                doc(db, 'expenses', e.id),
-                cleanUndefined(e),
-              ),
+              setDoc(doc(db, 'expenses', e.id), cleanUndefined(e)),
             ),
           );
         } else {
           setExpenses(
-            expensesSnap.docs.map((d) =>
-              normalizeExpense(d.data()),
-            ),
+            expensesSnap.docs.map((d) => normalizeExpense(d.data())),
           );
         }
 
@@ -241,17 +212,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           // Eski hujjatlar bilan mos bo‘lishi uchun default + remote
           setSettings({ ...defaultSettings, ...remote });
         } else {
-          await setDoc(
-            settingsRef,
-            cleanUndefined(defaultSettings),
-          );
+          await setDoc(settingsRef, cleanUndefined(defaultSettings));
           setSettings(defaultSettings);
         }
       } catch (error) {
-        console.error(
-          'Firebase ma’lumotlarini yuklashda xatolik:',
-          error,
-        );
+        console.error('Firebase ma’lumotlarini yuklashda xatolik:', error);
       }
     };
 
@@ -273,33 +238,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(
     (username: string, password: string): boolean => {
-      // SUPERADMIN
-      if (
-        username === 'superadmin' &&
-        password === 'superadmin'
-      ) {
+      // 1) SUPERADMIN
+      if (username === 'superadmin' && password === 'superadmin') {
         const newUser: User = {
           type: 'superadmin',
           username: 'superadmin',
         };
         setUser(newUser);
-
         if (typeof window !== 'undefined') {
-          window.localStorage.setItem(
-            USER_STORAGE_KEY,
-            JSON.stringify(newUser),
-          );
+          window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
         }
-
         return true;
       }
 
-      // KOMPANIYA ADMINI
+      // 2) KOMPANIYA ADMINI
       const company = companies.find((c) => {
         if (!c.isEnabled) return false;
 
-        const mainMatch =
-          c.login === username && c.password === password;
+        const mainMatch = c.login === username && c.password === password;
 
         const backupMatch =
           c.backupLogin &&
@@ -317,22 +273,44 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           companyName: company.name,
           username,
         };
+        setUser(newUser);
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
+        }
+        return true;
+      }
+
+      // 3) XODIM (STAFF) LOGINI
+      const employee = employees.find(
+        (e) => e.login === username && e.password === password,
+      );
+
+      if (employee) {
+        const companyForEmployee = companies.find(
+          (c) => c.id === employee.companyId,
+        );
+
+        const newUser: User = {
+          type: 'staff',
+          companyId: employee.companyId,
+          companyName: companyForEmployee?.name,
+          username,
+          employeeId: employee.id,
+          permissions: employee.permissions,
+        };
 
         setUser(newUser);
-
         if (typeof window !== 'undefined') {
-          window.localStorage.setItem(
-            USER_STORAGE_KEY,
-            JSON.stringify(newUser),
-          );
+          window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
         }
 
         return true;
       }
 
+      // 4) HECH NIMA TOPILMADI
       return false;
     },
-    [companies],
+    [companies, employees],
   );
 
   const logout = useCallback(() => {
@@ -352,10 +330,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setCompanies((prev) => [...prev, newCompany]);
 
-    setDoc(
-      doc(db, 'companies', newCompany.id),
-      cleanUndefined(newCompany),
-    ).catch(console.error);
+    setDoc(doc(db, 'companies', newCompany.id), cleanUndefined(newCompany)).catch(
+      console.error,
+    );
   }, []);
 
   const updateCompany = useCallback(
@@ -364,10 +341,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         prev.map((c) => (c.id === id ? { ...c, ...updates } : c)),
       );
 
-      updateDoc(
-        doc(db, 'companies', id),
-        cleanUndefined(updates) as any,
-      ).catch(console.error);
+      updateDoc(doc(db, 'companies', id), cleanUndefined(updates) as any).catch(
+        console.error,
+      );
 
       // Agar user shu kompaniya admini bo'lsa va nomi o'zgarsa – localStorage'ni ham yangilaymiz
       setUser((prev) => {
@@ -375,9 +351,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const updatedUser: User = {
             ...prev,
             companyName:
-              updates.name !== undefined
-                ? updates.name
-                : prev.companyName,
+              updates.name !== undefined ? updates.name : prev.companyName,
           };
           if (typeof window !== 'undefined') {
             window.localStorage.setItem(
@@ -406,16 +380,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const employeesRef = collection(db, 'employees');
       const expensesRef = collection(db, 'expenses');
 
-      const [ordersSnap, employeesSnap, expensesSnap] =
-        await Promise.all([
-          getDocs(query(ordersRef, where('companyId', '==', id))),
-          getDocs(
-            query(employeesRef, where('companyId', '==', id)),
-          ),
-          getDocs(
-            query(expensesRef, where('companyId', '==', id)),
-          ),
-        ]);
+      const [ordersSnap, employeesSnap, expensesSnap] = await Promise.all([
+        getDocs(query(ordersRef, where('companyId', '==', id))),
+        getDocs(query(employeesRef, where('companyId', '==', id))),
+        getDocs(query(expensesRef, where('companyId', '==', id))),
+      ]);
 
       await Promise.all([
         ...ordersSnap.docs.map((d) => deleteDoc(d.ref)),
@@ -450,33 +419,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       setOrders((prev) => [newOrder, ...prev]);
 
-      setDoc(
-        doc(db, 'orders', newOrder.id),
-        cleanUndefined(newOrder),
-      ).catch(console.error);
+      setDoc(doc(db, 'orders', newOrder.id), cleanUndefined(newOrder)).catch(
+        console.error,
+      );
 
       return newOrder;
     },
     [],
   );
 
-  const updateOrder = useCallback(
-    (id: string, updates: Partial<Order>) => {
-      setOrders((prev) =>
-        prev.map((o) => (o.id === id ? { ...o, ...updates } : o)),
-      );
+  const updateOrder = useCallback((id: string, updates: Partial<Order>) => {
+    setOrders((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, ...updates } : o)),
+    );
 
-      updateDoc(
-        doc(db, 'orders', id),
-        cleanUndefined(updates) as any,
-      ).catch(console.error);
-    },
-    [],
-  );
+    updateDoc(doc(db, 'orders', id), cleanUndefined(updates) as any).catch(
+      console.error,
+    );
+  }, []);
+
+  const deleteOrder = useCallback(async (id: string) => {
+    setOrders((prev) => prev.filter((o) => o.id !== id));
+    try {
+      await deleteDoc(doc(db, 'orders', id));
+    } catch (error) {
+      console.error('Buyurtmani o‘chirishda xatolik:', error);
+    }
+  }, []);
 
   const getOrdersByCompany = useCallback(
-    (companyId: string) =>
-      orders.filter((o) => o.companyId === companyId),
+    (companyId: string) => orders.filter((o) => o.companyId === companyId),
     [orders],
   );
 
@@ -506,10 +478,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         prev.map((e) => (e.id === id ? { ...e, ...updates } : e)),
       );
 
-      updateDoc(
-        doc(db, 'employees', id),
-        cleanUndefined(updates) as any,
-      ).catch(console.error);
+      updateDoc(doc(db, 'employees', id), cleanUndefined(updates) as any).catch(
+        console.error,
+      );
     },
     [],
   );
@@ -524,8 +495,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const getEmployeesByCompany = useCallback(
-    (companyId: string) =>
-      employees.filter((e) => e.companyId === companyId),
+    (companyId: string) => employees.filter((e) => e.companyId === companyId),
     [employees],
   );
 
@@ -539,10 +509,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setExpenses((prev) => [newExpense, ...prev]);
 
-    setDoc(
-      doc(db, 'expenses', newExpense.id),
-      cleanUndefined(newExpense),
-    ).catch(console.error);
+    setDoc(doc(db, 'expenses', newExpense.id), cleanUndefined(newExpense)).catch(
+      console.error,
+    );
   }, []);
 
   const updateExpense = useCallback(
@@ -551,10 +520,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         prev.map((e) => (e.id === id ? { ...e, ...updates } : e)),
       );
 
-      updateDoc(
-        doc(db, 'expenses', id),
-        cleanUndefined(updates) as any,
-      ).catch(console.error);
+      updateDoc(doc(db, 'expenses', id), cleanUndefined(updates) as any).catch(
+        console.error,
+      );
     },
     [],
   );
@@ -569,27 +537,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const getExpensesByCompany = useCallback(
-    (companyId: string) =>
-      expenses.filter((e) => e.companyId === companyId),
+    (companyId: string) => expenses.filter((e) => e.companyId === companyId),
     [expenses],
   );
 
   // SOZLAMALAR
 
-  const updateSettings = useCallback(
-    (updates: Partial<Settings>) => {
-      setSettings((prev) => {
-        const merged = { ...prev, ...updates };
-        setDoc(
-          doc(db, 'meta', 'settings'),
-          cleanUndefined(merged),
-          { merge: true },
-        ).catch(console.error);
-        return merged;
-      });
-    },
-    [],
-  );
+  const updateSettings = useCallback((updates: Partial<Settings>) => {
+    setSettings((prev) => {
+      const merged = { ...prev, ...updates };
+      setDoc(doc(db, 'meta', 'settings'), cleanUndefined(merged), {
+        merge: true,
+      }).catch(console.error);
+      return merged;
+    });
+  }, []);
 
   return (
     <AppContext.Provider
@@ -604,6 +566,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         orders,
         addOrder,
         updateOrder,
+        deleteOrder,
         getOrdersByCompany,
         employees,
         addEmployee,
@@ -627,9 +590,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 export function useApp() {
   const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error(
-      'useApp faqat AppProvider ichida ishlatilishi mumkin',
-    );
+    throw new Error('useApp faqat AppProvider ichida ishlatilishi mumkin');
   }
   return context;
 }

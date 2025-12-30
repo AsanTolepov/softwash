@@ -39,7 +39,7 @@ export interface Customer {
 
 export interface OrderDetails {
   itemCount: number;
-  serviceType: string;
+  serviceType: string; // hozircha oddiy string
   notes?: string;
   pickupDate?: string;
   dateIn: string;
@@ -61,6 +61,24 @@ export interface Order {
   createdAt: string;
 }
 
+// Xodim ruxsatlari
+export interface EmployeePermissions {
+  canViewDashboard: boolean;
+
+  canViewOrders: boolean;
+  canManageOrders: boolean;
+
+  canViewEmployees: boolean;
+  canManageEmployees: boolean;
+
+  canViewExpenses: boolean;
+  canManageExpenses: boolean;
+
+  canViewReports: boolean;
+
+  canViewSettings: boolean;
+}
+
 // Employee roli endi LocalizedString bo'ladi
 export interface Employee {
   id: string;
@@ -74,6 +92,11 @@ export interface Employee {
   hiredAt: string;
   dailyRate: number;
   attendance: string[];
+
+  // Login / parol va ruxsatlar (ixtiyoriy)
+  login?: string;
+  password?: string;
+  permissions?: EmployeePermissions;
 }
 
 // Expense mahsulot nomi va izohi ko'p tilli
@@ -89,10 +112,14 @@ export interface Expense {
 }
 
 export interface User {
-  type: 'superadmin' | 'admin';
+  type: 'superadmin' | 'admin' | 'staff';
   companyId?: string;
   companyName?: string;
   username?: string; // login
+
+  // Faqat xodim (staff) uchun
+  employeeId?: string;
+  permissions?: EmployeePermissions;
 }
 
 export type DashboardTheme = 'classic' | 'compact' | 'cards';

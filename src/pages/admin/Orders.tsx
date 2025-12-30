@@ -1,9 +1,11 @@
+// src/pages/admin/Orders.tsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Eye } from 'lucide-react';
+import { Search, Eye, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useApp } from '@/contexts/AppContext';
 import { useI18n } from '@/lib/i18n';
+import { useToast } from '@/hooks/use-toast';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -27,19 +29,38 @@ import { formatCurrencyUZS } from '@/lib/utils';
 
 export default function Orders() {
   const navigate = useNavigate();
-  const { user, getOrdersByCompany } = useApp();
+  const { user, getOrdersByCompany, deleteOrder } = useApp();
   const { t } = useI18n();
+  const { toast } = useToast();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] =
     useState<OrderStatus | 'ALL'>('ALL');
+
+  const isStaff = user?.type === 'staff';
+  const staffPermissions = isStaff ? user.permissions : undefined;
+
+  const canViewOrders =
+    !isStaff || !!staffPermissions?.canViewOrders;
+  const canManageOrders =
+    !isStaff || !!staffPermissions?.canManageOrders;
+
+  if (!canViewOrders) {
+    return (
+      <div className="text-center text-muted-foreground py-16">
+        Sizda buyurtmalar bo‘limini ko‘rish huquqi yo‘q.
+      </div>
+    );
+  }
 
   const orders = getOrdersByCompany(user?.companyId || '');
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       search === '' ||
-      order.id.toLowerCase().includes(search.toLowerCase()) ||
+      order.id
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
       `${order.customer.firstName} ${order.customer.lastName}`
         .toLowerCase()
         .includes(search.toLowerCase()) ||
@@ -48,6 +69,19 @@ export default function Orders() {
       statusFilter === 'ALL' || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleDelete = async (id: string) => {
+    const ok = window.confirm(
+      'Ushbu buyurtmani o‘chirmoqchimisiz?',
+    );
+    if (!ok) return;
+
+    await deleteOrder(id);
+    toast({
+      title: 'Buyurtma o‘chirildi',
+      description: 'Buyurtma muvaffaqiyatli o‘chirildi.',
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -67,7 +101,9 @@ export default function Orders() {
             <div className="relative w-full sm:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder={t('ordersPage.searchPlaceholder')}
+                placeholder={t(
+                  'ordersPage.searchPlaceholder',
+                )}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -103,15 +139,30 @@ export default function Orders() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t('ordersPage.table.id')}</TableHead>
-                <TableHead>{t('ordersPage.table.customer')}</TableHead>
-                <TableHead>{t('ordersPage.table.service')}</TableHead>
-                <TableHead>{t('ordersPage.table.items')}</TableHead>
-                <TableHead>{t('ordersPage.table.total')}</TableHead>
-                <TableHead>{t('ordersPage.table.status')}</TableHead>
-                <TableHead>{t('ordersPage.table.date')}</TableHead>
                 <TableHead>
-                  {t('ordersPage.table.actions')}
+                  {t('ordersPage.table.id')}
+                </TableHead>
+                <TableHead>
+                  {t('ordersPage.table.customer')}
+                </TableHead>
+                <TableHead>
+                  {t('ordersPage.table.service')}
+                </TableHead>
+                <TableHead>
+                  {t('ordersPage.table.items')}
+                </TableHead>
+                <TableHead>
+                  {t('ordersPage.table.total')}
+                </TableHead>
+                <TableHead>
+                  {t('ordersPage.table.status')}
+                </TableHead>
+                <TableHead>
+                  {t('ordersPage.table.date')}
+                </TableHead>
+                <TableHead>
+                  {t('ordersPage.table.actions') ||
+                    'Amallar'}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -125,10 +176,16 @@ export default function Orders() {
                     {order.customer.firstName}{' '}
                     {order.customer.lastName}
                   </TableCell>
-                  <TableCell>{order.details.serviceType}</TableCell>
-                  <TableCell>{order.details.itemCount}</TableCell>
                   <TableCell>
-                    {formatCurrencyUZS(order.payment.total)}
+                    {order.details.serviceType}
+                  </TableCell>
+                  <TableCell>
+                    {order.details.itemCount}
+                  </TableCell>
+                  <TableCell>
+                    {formatCurrencyUZS(
+                      order.payment.total,
+                    )}
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={order.status} />
@@ -140,15 +197,30 @@ export default function Orders() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() =>
-                        navigate(`/admin/order/${order.id}`)
-                      }
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() =>
+                          navigate(
+                            `/admin/order/${order.id}`,
+                          )
+                        }
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      {canManageOrders && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            handleDelete(order.id)
+                          }
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
