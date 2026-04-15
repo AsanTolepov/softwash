@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const txt=fs.readFileSync\\(''src/pages/admin/Settings.tsx'',''utf8''\\); const line377=txt.split\\(''\\\\n''\\)[376]; console.log\\(''Line 377 hex:'', Buffer.from\\(line377\\).toString\\(''hex''\\).match\\(/.{1,2}/g\\).join\\('' ''\\)\\); console.log\\(''Line 377 text:'', line377\\);\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const txt=fs.readFileSync\\(''src/locales/uz.ts'',''utf8''\\); const line48=txt.split\\(''\\\\n''\\)[47]; console.log\\(''uz.ts line 48 text:'', line48\\); console.log\\(''hex:'', Buffer.from\\(line48\\).toString\\(''hex''\\).match\\(/.{1,2}/g\\).join\\('' ''\\)\\);\")",
+      "Bash(node -e \":*)",
+      "Bash(npm install:*)"
+    ]
+  }
+}

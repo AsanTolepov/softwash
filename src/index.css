@@ -1,0 +1,278 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════
+   Softwash Design System — "Aqua Pro"
+   Kirxona mavzusiga mos: suv, tozalik, professionalizm
+   ═══════════════════════════════════════════════════ */
+
+@layer base {
+  :root {
+    /* ── Asosiy ranglar: Teal-Cyan palette ── */
+    --background: 210 45% 97%;
+    --foreground: 220 55% 13%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 55% 13%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 55% 13%;
+
+    /* Deep sky-teal — suv, tozalik */
+    --primary: 199 89% 38%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 93%;
+    --secondary-foreground: 220 55% 13%;
+
+    --muted: 210 35% 94%;
+    --muted-foreground: 215 22% 48%;
+
+    --accent: 199 60% 92%;
+    --accent-foreground: 199 89% 28%;
+
+    --destructive: 4 86% 58%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Status ranglar */
+    --success: 152 69% 34%;
+    --success-foreground: 0 0% 100%;
+    --warning: 36 94% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 199 89% 46%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 214 30% 88%;
+    --input: 214 30% 88%;
+    --ring: 199 89% 38%;
+
+    --radius: 0.625rem;
+
+    /* ── Sidebar: Deep Navy ── */
+    --sidebar-background: 222 60% 9%;
+    --sidebar-foreground: 213 30% 82%;
+    --sidebar-primary: 199 80% 56%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 40% 16%;
+    --sidebar-accent-foreground: 213 30% 90%;
+    --sidebar-border: 222 35% 14%;
+    --sidebar-ring: 199 80% 56%;
+
+    /* Chart */
+    --chart-1: 199 89% 38%;
+    --chart-2: 152 69% 34%;
+    --chart-3: 36 94% 50%;
+    --chart-4: 258 80% 58%;
+    --chart-5: 340 75% 52%;
+  }
+
+  .dark {
+    --background: 222 55% 7%;
+    --foreground: 210 40% 96%;
+
+    --card: 222 48% 10%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 222 48% 10%;
+    --popover-foreground: 210 40% 96%;
+
+    --primary: 199 80% 54%;
+    --primary-foreground: 222 55% 7%;
+
+    --secondary: 222 35% 16%;
+    --secondary-foreground: 210 40% 96%;
+
+    --muted: 222 35% 16%;
+    --muted-foreground: 215 22% 55%;
+
+    --accent: 222 35% 16%;
+    --accent-foreground: 199 80% 70%;
+
+    --destructive: 4 75% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 65% 42%;
+    --success-foreground: 0 0% 100%;
+    --warning: 36 90% 52%;
+    --warning-foreground: 0 0% 100%;
+    --info: 199 80% 52%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 222 35% 16%;
+    --input: 222 35% 16%;
+    --ring: 199 80% 54%;
+
+    --sidebar-background: 222 60% 6%;
+    --sidebar-foreground: 213 30% 80%;
+    --sidebar-primary: 199 80% 56%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 40% 13%;
+    --sidebar-accent-foreground: 213 30% 90%;
+    --sidebar-border: 222 35% 12%;
+    --sidebar-ring: 199 80% 56%;
+
+    --chart-1: 199 80% 56%;
+    --chart-2: 152 65% 42%;
+    --chart-3: 36 90% 55%;
+    --chart-4: 258 75% 65%;
+    --chart-5: 340 72% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* ── Custom Scrollbar ─────────────────────────────── */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 5px; height: 5px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 99px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
+  }
+}
+
+/* ── Gradient utilities ───────────────────────────── */
+@layer utilities {
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(199 89% 38%), hsl(212 89% 48%));
+  }
+  .gradient-success {
+    background: linear-gradient(135deg, hsl(152 69% 34%), hsl(168 72% 40%));
+  }
+  .gradient-warning {
+    background: linear-gradient(135deg, hsl(36 94% 48%), hsl(24 90% 52%));
+  }
+  .gradient-info {
+    background: linear-gradient(135deg, hsl(199 89% 42%), hsl(210 85% 52%));
+  }
+  .gradient-danger {
+    background: linear-gradient(135deg, hsl(4 86% 55%), hsl(340 80% 52%));
+  }
+  .gradient-purple {
+    background: linear-gradient(135deg, hsl(258 80% 55%), hsl(280 75% 60%));
+  }
+
+  /* Mesh background for auth / customer pages */
+  .bg-mesh {
+    background-color: hsl(210 45% 97%);
+    background-image:
+      radial-gradient(at 18% 55%, hsl(199 89% 88% / 0.7) 0px, transparent 52%),
+      radial-gradient(at 80% 8%,  hsl(212 89% 86% / 0.5) 0px, transparent 46%),
+      radial-gradient(at 58% 85%, hsl(185 70% 88% / 0.4) 0px, transparent 50%);
+  }
+  .dark .bg-mesh {
+    background-color: hsl(222 55% 7%);
+    background-image:
+      radial-gradient(at 18% 55%, hsl(199 89% 14% / 0.5) 0px, transparent 52%),
+      radial-gradient(at 80% 8%,  hsl(212 89% 12% / 0.4) 0px, transparent 46%),
+      radial-gradient(at 58% 85%, hsl(185 70% 10% / 0.3) 0px, transparent 50%);
+  }
+
+  .card-hover {
+    @apply transition-all duration-200 ease-out;
+  }
+  .card-hover:hover {
+    @apply -translate-y-0.5 shadow-lg;
+  }
+}
+
+/* ── Animations ───────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes slide-in {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes status-pulse {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+@keyframes shimmer-btn {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-in  { animation: fade-in  0.32s ease-out both; }
+.animate-fade-up  { animation: fade-up  0.38s ease-out both; }
+.animate-scale-in { animation: scale-in 0.26s ease-out both; }
+.animate-slide-in { animation: slide-in 0.30s ease-out both; }
+.animate-spin-slow { animation: spin-slow 2s linear infinite; }
+
+/* Staggered entry for card grids */
+.stagger > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger > *:nth-child(2) { animation-delay: 0.09s; }
+.stagger > *:nth-child(3) { animation-delay: 0.14s; }
+.stagger > *:nth-child(4) { animation-delay: 0.19s; }
+.stagger > *:nth-child(5) { animation-delay: 0.24s; }
+.stagger > *:nth-child(6) { animation-delay: 0.29s; }
+
+/* ── Shimmer on primary buttons ───────────────────── */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    108deg,
+    transparent 38%,
+    rgba(255,255,255,0.20) 50%,
+    transparent 62%
+  );
+  background-size: 220% auto;
+  animation: shimmer-btn 2.8s linear infinite;
+}
+
+/* ── Sidebar active nav indicator ─────────────────── */
+.nav-item-active {
+  position: relative;
+}
+.nav-item-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 18%;
+  bottom: 18%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: hsl(var(--sidebar-primary));
+  box-shadow: 0 0 8px hsl(var(--sidebar-primary) / 0.6);
+}
