@@ -20,15 +20,15 @@ export interface EstimateParams {
 
 // ─── Konstantalar ────────────────────────────────────────────────────────────
 const WORK_START = 9;  // 09:00
-const WORK_END   = 19; // 19:00
+const WORK_END = 19; // 19:00
 
 // Yuvish vaqtlari — bir sikl uchun (daqiqa)
 const WASH_MINUTES: Record<ClothingType, number> = {
-  REGULAR:     70, // avg 60–80
+  REGULAR: 70, // avg 60–80
   JACKET_COAT: 40,
-  BLANKET:     70, // avg 60–80
-  CURTAIN:     85, // avg 80–90
-  SUIT:        70,
+  BLANKET: 70, // avg 60–80
+  CURTAIN: 85, // avg 80–90
+  SUIT: 70,
 };
 
 // Quritgich vaqti — bir kiyim uchun (daqiqa, avg 90–120)
@@ -46,11 +46,11 @@ const CHEMICAL_MINUTES = 120;
  * Daraja 1 = 0 bonus, daraja 5 = 4 × qiymat.
  */
 const DIRTY_BONUS_PER_LEVEL: Record<ClothingType, number> = {
-  REGULAR:     12, // har bir daraja: +12 daqiqa (umumiy maks: +48 daq)
+  REGULAR: 12, // har bir daraja: +12 daqiqa (umumiy maks: +48 daq)
   JACKET_COAT: 10, // nozik mato → +10 daqiqa (umumiy maks: +40 daq)
-  BLANKET:     20, // katta hajm → +20 daqiqa (umumiy maks: +80 daq)
-  CURTAIN:     18, // ingichka to'qima → +18 daqiqa (umumiy maks: +72 daq)
-  SUIT:        10, // nozik mato → +10 daqiqa (umumiy maks: +40 daq)
+  BLANKET: 20, // katta hajm → +20 daqiqa (umumiy maks: +80 daq)
+  CURTAIN: 18, // ingichka to'qima → +18 daqiqa (umumiy maks: +72 daq)
+  SUIT: 10, // nozik mato → +10 daqiqa (umumiy maks: +40 daq)
 };
 
 // ─── Yordamchi funksiyalar ────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ function dirtyBonusMinutes(clothingType: ClothingType, dirtyLevel: number): numb
 /** Rang bo'yicha yuvish sikllari */
 function colorCycles(color: ClothingColor): number {
   if (color === 'BRIGHT') return 3;
-  if (color === 'DARK')   return 2;
+  if (color === 'DARK') return 2;
   return 1;
 }
 
@@ -199,10 +199,10 @@ export function estimateReadyTime(params: EstimateParams): Date {
     submittedAt = new Date(),
   } = params;
 
-  const hasWashing  = services.includes('WASHING');
-  const hasDrying   = services.includes('DRYING');
+  const hasWashing = services.includes('WASHING');
+  const hasDrying = services.includes('DRYING');
   const hasChemical = services.includes('CHEMICAL');
-  const hasIroning  = services.includes('IRONING');
+  const hasIroning = services.includes('IRONING');
 
   // ── Maxsus holat: Zudlik + Odealo yoki Palto ──────────────────────────────
   // Yuvib, ilib quritiladi → ertasiga ertalab 10 daqiqa quritgich → tayyor
@@ -222,7 +222,7 @@ export function estimateReadyTime(params: EstimateParams): Date {
   // shuning uchun daraja 1 va daraja 5 HECH QACHON bir xil bo'lmaydi.
   let washTime = 0;
   if (hasWashing) {
-    const cycles     = getWashCycles(clothingType, color, dirtyLevel);
+    const cycles = getWashCycles(clothingType, color, dirtyLevel);
     const dirtyBonus = dirtyBonusMinutes(clothingType, dirtyLevel);
     washTime = cycles * WASH_MINUTES[clothingType] + dirtyBonus;
   }
@@ -293,20 +293,20 @@ export function estimateReadyTime(params: EstimateParams): Date {
  * "Bugun 16:30 ga tayyor" | "Ertaga 10:10 ga tayyor" | "12-iyun, 14:00 ga tayyor"
  */
 export function formatReadyTime(date: Date, lang: string = 'uz'): string {
-  const now      = new Date();
+  const now = new Date();
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const isToday    = date.toDateString() === now.toDateString();
+  const isToday = date.toDateString() === now.toDateString();
   const isTomorrow = date.toDateString() === tomorrow.toDateString();
 
   const timeStr = date.toLocaleTimeString('uz-UZ', {
-    hour:   '2-digit',
+    hour: '2-digit',
     minute: '2-digit',
   });
 
   if (lang === 'ru') {
-    if (isToday)    return `Сегодня в ${timeStr}`;
+    if (isToday) return `Сегодня в ${timeStr}`;
     if (isTomorrow) return `Завтра в ${timeStr}`;
     return date.toLocaleDateString('ru-RU', {
       day: 'numeric', month: 'long',
@@ -314,7 +314,7 @@ export function formatReadyTime(date: Date, lang: string = 'uz'): string {
   }
 
   if (lang === 'en') {
-    if (isToday)    return `Today at ${timeStr}`;
+    if (isToday) return `Today at ${timeStr}`;
     if (isTomorrow) return `Tomorrow at ${timeStr}`;
     return date.toLocaleDateString('en-US', {
       day: 'numeric', month: 'long',
@@ -322,9 +322,15 @@ export function formatReadyTime(date: Date, lang: string = 'uz'): string {
   }
 
   // uz (default)
-  if (isToday)    return `Bugun soat ${timeStr} ga tayyor`;
+  const UZ_MONTHS = [
+    'yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun',
+    'iyul', 'avgust', 'sentabr', 'oktyabr', 'noyabr', 'dekabr'
+  ];
+
+  if (isToday) return `Bugun soat ${timeStr} ga tayyor`;
   if (isTomorrow) return `Ertaga soat ${timeStr} ga tayyor`;
-  return date.toLocaleDateString('uz-UZ', {
-    day: 'numeric', month: 'long',
-  }) + ` soat ${timeStr} ga tayyor`;
+
+  const day = date.getDate();
+  const month = UZ_MONTHS[date.getMonth()];
+  return `${day}-${month} soat ${timeStr} ga tayyor`;
 }
