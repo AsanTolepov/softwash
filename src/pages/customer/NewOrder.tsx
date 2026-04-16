@@ -11,17 +11,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ClothingType, ClothingColor, LaundryService } from '@/types';
 import { estimateReadyTime, formatReadyTime } from '@/lib/estimateReadyTime';
 
 // ─── Konstantlar ─────────────────────────────────────────────────────────────
 
 const CLOTHING_TYPES: { value: ClothingType; label: string; emoji: string }[] = [
-  { value: 'REGULAR',     label: 'Oddiy kiyim',    emoji: '👕' },
+  { value: 'REGULAR', label: 'Oddiy kiyim', emoji: '👕' },
   { value: 'JACKET_COAT', label: 'Kurtka / Palto', emoji: '🧥' },
-  { value: 'BLANKET',     label: 'Odealo / Adyol', emoji: '🛏️' },
-  { value: 'CURTAIN',     label: 'Parda',           emoji: '🪟' },
-  { value: 'SUIT',        label: 'Kostyum / Shim', emoji: '👔' },
+  { value: 'BLANKET', label: 'Odealo / Adyol', emoji: '🛏️' },
+  { value: 'CURTAIN', label: 'Parda', emoji: '🪟' },
+  { value: 'SUIT', label: 'Kostyum / Shim', emoji: '👔' },
 ];
 
 const COLORS: {
@@ -30,16 +31,16 @@ const COLORS: {
   emoji: string;
   hint: string;
 }[] = [
-  { value: 'BRIGHT',  label: 'Yorqin rang', emoji: '🌈', hint: 'Qizil, sariq, oq, yashil...' },
-  { value: 'DARK',    label: "To'q rang",   emoji: '🖤', hint: "Qora, jigarrang, to'q ko'k..." },
-  { value: 'NEUTRAL', label: 'Aralash',     emoji: '🎨', hint: 'Kulrang, bej va boshqalar' },
-];
+    { value: 'BRIGHT', label: 'Yorqin rang', emoji: '🌈', hint: 'Qizil, sariq, oq, yashil...' },
+    { value: 'DARK', label: "To'q rang", emoji: '🖤', hint: "Qora, jigarrang, to'q ko'k..." },
+    { value: 'NEUTRAL', label: 'Aralash', emoji: '🎨', hint: 'Kulrang, bej va boshqalar' },
+  ];
 
 const SERVICES: { value: LaundryService; label: string; emoji: string }[] = [
-  { value: 'WASHING',  label: 'Yuvish',         emoji: '🫧' },
-  { value: 'DRYING',   label: 'Quritish',        emoji: '💨' },
+  { value: 'WASHING', label: 'Yuvish', emoji: '🫧' },
+  { value: 'DRYING', label: 'Quritish', emoji: '💨' },
   { value: 'CHEMICAL', label: 'Kimyoviy ishlov', emoji: '🧪' },
-  { value: 'IRONING',  label: 'Dazmollash',      emoji: '♨️' },
+  { value: 'IRONING', label: 'Dazmollash', emoji: '♨️' },
 ];
 
 const DIRTY_LEVELS = [
@@ -86,20 +87,22 @@ export default function NewOrder() {
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
-    firstName:     '',
-    lastName:      '',
-    phone:         '',
-    itemCount:     '1',
-    notes:         '',
-    clothingType:  'REGULAR' as ClothingType,
-    color:         'NEUTRAL' as ClothingColor,
+    firstName: '',
+    lastName: '',
+    phone: '',
+    itemCount: '1',
+    notes: '',
+    clothingType: 'REGULAR' as ClothingType,
+    color: 'NEUTRAL' as ClothingColor,
     specificColor: '',          // Tanlangan aniq rang hex kodi
-    dirtyLevel:    1,
-    services:      ['WASHING'] as LaundryService[],
-    isUrgent:      false,
-    hasTear:       false,
-    tearLocation:  '',
+    dirtyLevel: 1,
+    services: ['WASHING'] as LaundryService[],
+    isUrgent: false,
+    hasTear: false,
+    tearLocation: '',
   });
+
+  const [isAgreed, setIsAgreed] = useState(false);
 
   const effectiveCompanyId = useMemo(() => {
     if (companyIdParam) return companyIdParam;
@@ -120,7 +123,7 @@ export default function NewOrder() {
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     return orders.filter(
       (o) => o.companyId === effectiveCompanyId &&
-             o.createdAt.startsWith(todayStr)
+        o.createdAt.startsWith(todayStr)
     ).length;
   }, [orders, effectiveCompanyId]);
 
@@ -128,11 +131,11 @@ export default function NewOrder() {
   const colorOrderCounts = useMemo(() => {
     const relevant = orders.filter(
       (o) => o.companyId === effectiveCompanyId &&
-             (o.status === 'NEW' || o.status === 'WASHING')
+        (o.status === 'NEW' || o.status === 'WASHING')
     );
     return {
-      BRIGHT:  relevant.filter((o) => o.details.color === 'BRIGHT').length,
-      DARK:    relevant.filter((o) => o.details.color === 'DARK').length,
+      BRIGHT: relevant.filter((o) => o.details.color === 'BRIGHT').length,
+      DARK: relevant.filter((o) => o.details.color === 'DARK').length,
       NEUTRAL: relevant.filter((o) => o.details.color === 'NEUTRAL').length,
     };
   }, [orders, effectiveCompanyId]);
@@ -140,13 +143,13 @@ export default function NewOrder() {
   // ── Tayyor vaqtni real-time hisoblash ─────────────────────────────────────
   const estimatedReadyAt = useMemo(() => {
     return estimateReadyTime({
-      clothingType:    formData.clothingType,
-      color:           formData.color,
-      dirtyLevel:      formData.dirtyLevel,
-      services:        formData.services,
-      isUrgent:        formData.isUrgent,
-      itemCount:       Math.max(1, parseInt(formData.itemCount) || 1),
-      processingDays:  settings.processingDays,
+      clothingType: formData.clothingType,
+      color: formData.color,
+      dirtyLevel: formData.dirtyLevel,
+      services: formData.services,
+      isUrgent: formData.isUrgent,
+      itemCount: Math.max(1, parseInt(formData.itemCount) || 1),
+      processingDays: settings.processingDays,
       todayOrderCount,
       dailyOrderLimit: settings.dailyOrderLimit,
     });
@@ -184,8 +187,8 @@ export default function NewOrder() {
 
     if (!effectiveCompanyId) {
       toast({
-        variant:     'destructive',
-        title:       'Kompaniya topilmadi',
+        variant: 'destructive',
+        title: 'Kompaniya topilmadi',
         description: 'Buyurtma berish uchun tizim sozlamalaridan kamida bitta kompaniya yarating.',
       });
       return;
@@ -193,8 +196,8 @@ export default function NewOrder() {
 
     if (!formData.firstName || !formData.phone || !formData.itemCount) {
       toast({
-        variant:     'destructive',
-        title:       "Ma'lumotlar yetarli emas",
+        variant: 'destructive',
+        title: "Ma'lumotlar yetarli emas",
         description: "Iltimos, * bilan belgilangan maydonlarni to'ldiring.",
       });
       return;
@@ -208,28 +211,28 @@ export default function NewOrder() {
       companyId: effectiveCompanyId,
       customer: {
         firstName: formData.firstName,
-        lastName:  formData.lastName,
-        phone:     formData.phone,
+        lastName: formData.lastName,
+        phone: formData.phone,
       },
       details: {
-        itemCount:        parseInt(formData.itemCount, 10),
-        serviceType:      serviceLabel,
-        services:         formData.services,
-        clothingType:     formData.clothingType,
-        color:            formData.color,
-        dirtyLevel:       formData.dirtyLevel,
-        isUrgent:         formData.isUrgent,
+        itemCount: parseInt(formData.itemCount, 10),
+        serviceType: serviceLabel,
+        services: formData.services,
+        clothingType: formData.clothingType,
+        color: formData.color,
+        dirtyLevel: formData.dirtyLevel,
+        isUrgent: formData.isUrgent,
         estimatedReadyAt: estimatedReadyAt.toISOString(),
-        notes:            formData.notes || undefined,
-        pickupDate:       format(estimatedReadyAt, 'yyyy-MM-dd'),
-        dateIn:           format(new Date(), 'yyyy-MM-dd'),
-        hasTear:          formData.hasTear || undefined,
-        tearLocation:     formData.hasTear ? (formData.tearLocation || undefined) : undefined,
-        specificColor:    formData.specificColor || undefined,
+        notes: formData.notes || undefined,
+        pickupDate: format(estimatedReadyAt, 'yyyy-MM-dd'),
+        dateIn: format(new Date(), 'yyyy-MM-dd'),
+        hasTear: formData.hasTear || undefined,
+        tearLocation: formData.hasTear ? (formData.tearLocation || undefined) : undefined,
+        specificColor: formData.specificColor || undefined,
       },
       payment: {
-        total:     0,
-        advance:   0,
+        total: 0,
+        advance: 0,
         remaining: 0,
       },
       status: 'NEW',
@@ -311,7 +314,7 @@ export default function NewOrder() {
                     setFormData({
                       ...formData,
                       clothingType: ct.value,
-                      color:      formData.color,
+                      color: formData.color,
                       dirtyLevel: formData.dirtyLevel,
                     })
                   }
@@ -408,13 +411,13 @@ export default function NewOrder() {
                   <p className="text-xs text-muted-foreground">
                     {formData.specificColor
                       ? <>
-                          Tanlangan:{' '}
-                          <strong className="text-foreground">
-                            {COLOR_SWATCHES[formData.color].find(
-                              (s) => s.hex === formData.specificColor,
-                            )?.name ?? formData.specificColor}
-                          </strong>
-                        </>
+                        Tanlangan:{' '}
+                        <strong className="text-foreground">
+                          {COLOR_SWATCHES[formData.color].find(
+                            (s) => s.hex === formData.specificColor,
+                          )?.name ?? formData.specificColor}
+                        </strong>
+                      </>
                       : 'Aniq rang tanlanmagan (ixtiyoriy)'
                     }
                   </p>
@@ -460,7 +463,7 @@ export default function NewOrder() {
             <div className="flex gap-2">
               {[
                 { value: false, label: "Yo'q", emoji: '✅' },
-                { value: true,  label: 'Ha',   emoji: '⚠️' },
+                { value: true, label: 'Ha', emoji: '⚠️' },
               ].map((opt) => (
                 <button
                   key={String(opt.value)}
@@ -599,10 +602,27 @@ export default function NewOrder() {
             </div>
           </div>
 
+          {/* ── Oferta (T&C) ──────────────────────────────────────────────── */}
+          <div className="flex items-center space-x-3 px-1 py-1">
+            <Checkbox
+              id="isAgreed"
+              checked={isAgreed}
+              onCheckedChange={(checked) => setIsAgreed(checked === true)}
+              className="h-5 w-5 rounded-md border-primary data-[state=checked]:bg-primary"
+            />
+            <Label
+              htmlFor="isAgreed"
+              className="text-sm font-medium leading-none cursor-pointer select-none"
+            >
+              Ommaviy <a href="/beliy_parus_oferta.pdf" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">Oferta</a> shartnamalariga roziman
+            </Label>
+          </div>
+
           <Button
             type="submit"
             size="lg"
-            className="w-full h-12 rounded-xl font-semibold gradient-primary text-white border-0 shadow-glow-primary btn-shimmer hover:opacity-90 transition-opacity"
+            className="w-full h-12 rounded-xl font-semibold gradient-primary text-white border-0 shadow-glow-primary btn-shimmer hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!isAgreed}
           >
             <Send className="h-4 w-4 mr-2" />
             Buyurtma yuborish

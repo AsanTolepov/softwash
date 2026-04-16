@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="white">
+  <rect width="1200" height="630" fill="#f8faff"/>
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <circle cx="1000" cy="150" r="200" fill="#3b82f6" fill-opacity="0.05" />
+  <circle cx="200" cy="500" r="150" fill="#3b82f6" fill-opacity="0.03" />
+  
+  <path d="M600 100C600 100 480 250 480 350C480 416.3 533.7 470 600 470C666.3 470 720 416.3 720 350C720 250 600 100Z" fill="url(#grad)"/>
+  <circle cx="550" cy="270" r="40" fill="white" fill-opacity="0.2" />
+  <circle cx="650" cy="230" r="20" fill="white" fill-opacity="0.4" />
+  
+  <text x="600" y="550" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="80" fill="#1e3a8a">Softwash</text>
+  <text x="600" y="590" text-anchor="middle" font-family="Arial, sans-serif" font-weight="normal" font-size="28" fill="#3b82f6">Professional Laundry Management System</text>
+</svg>
